@@ -1,0 +1,182 @@
+# Chronos
+
+**Graph-native application state chronicle — zero-effort observability through PluresDB state diffs.**
+
+> "The best log is one no developer had to write."
+
+## The Problem
+
+Traditional application logging is broken:
+
+- **Manual** — developers decide what to log, inevitably missing what matters
+- **Flat** — lines in a file with no relationships or causality
+- **Lossy** — you only see what someone thought to capture
+- **Noisy** — 90% garbage until something breaks, then the 10% you need is missing
+
+## The Insight
+
+If your application state is already reactive (via [plures/unum](https://github.com/plures/unum)), then **logging is just the chain of diffs recorded in time**. Every state change is a graph node. Every causal relationship is an edge. No developer effort required.
+
+## How It Works
+
+```
+Application (using unum)
+    │
+    │  state diffs (automatic via unum subscriptions)
+    ▼
+┌─────────────────────────────┐
+│  Chronos                    │
+│  • Captures unum state diffs│
+│  • Builds causal chain      │
+│  • Timestamps each node     │
+│  • Zero configuration       │
+└─────────────┬───────────────┘
+              │
+              ▼
+┌─────────────────────────────┐
+│  PluresDB                   │
+│  • Graph storage            │
+│  • Time-series indexing     │
+│  • Vector search            │
+│  • Hyperswarm P2P sync      │
+└─────────────────────────────┘
+```
+
+## The Graph Model
+
+Instead of flat log lines:
+```
+[INFO] 2026-03-18T15:30:00 User clicked submit
+[INFO] 2026-03-18T15:30:01 Form validated
+[INFO] 2026-03-18T15:30:01 API call POST /submit
+[ERROR] 2026-03-18T15:30:02 Request failed: 500
+```
+
+Chronos captures a **state graph**:
+
+```
+UserAction(click_submit)
+  ├─causes→ StateChange(form.validated = true)
+  │           ├─causes→ APICall(POST /submit)
+  │           │           └─causes→ StateChange(request.error = "500")
+  │           └─causes→ UIUpdate(spinner.visible = true)
+  └─context→ Session(user_id: 7, page: /checkout)
+```
+
+## Querying
+
+Replace `grep "ERROR" | tail -100` with graph queries:
+
+```javascript
+import { chronos } from '@plures/chronos';
+
+// What caused this error state?
+const causes = await chronos.trace('request.error', { direction: 'backward' });
+
+// What did this user action affect?
+const effects = await chronos.trace(actionNode, { direction: 'forward' });
+
+// Everything that happened in this session
+const session = await chronos.subgraph({ context: 'session:abc123' });
+
+// Semantic search across all state changes
+const results = await chronos.search('authentication failures');
+
+// Diff between working and broken states
+const diff = await chronos.diff(workingSnapshot, brokenSnapshot);
+```
+
+## Integration with Unum
+
+Chronos hooks into unum's reactive subscriptions automatically:
+
+```javascript
+import { createChronos } from '@plures/chronos';
+import { pluresData } from '@plures/unum';
+
+// One line. That's it. Every state change is now chronicled.
+const chronicle = createChronos(db);
+
+// Your app code doesn't change at all
+const todos = pluresData('todos');
+todos.add({ text: 'Ship chronos', completed: false });
+// ^ This state change is automatically captured with full causal context
+```
+
+## Architecture
+
+### Chronicle Node
+
+Each state change becomes a `ChronicleNode`:
+
+```typescript
+interface ChronicleNode {
+  id: string;              // Unique node ID
+  timestamp: number;       // Unix ms
+  path: string;            // PluresDB path that changed (e.g. "todos.abc123")
+  diff: {
+    before: any;           // Previous value (null for creates)
+    after: any;            // New value (null for deletes)
+  };
+  cause?: string;          // ID of the node that caused this change
+  context?: string;        // Session/request/transaction context ID
+  stack?: string[];        // Async context chain (automatic)
+}
+```
+
+### Chronicle Edge Types
+
+| Edge | Meaning |
+|------|---------|
+| `causes` | This state change directly caused another |
+| `context` | Belongs to this session/request/transaction |
+| `reverts` | Undoes a previous state change |
+| `concurrent` | Happened simultaneously (same tick) |
+
+### Causal Chain Tracking
+
+Chronos uses async context (AsyncLocalStorage in Node.js) to automatically track causality:
+
+1. User action triggers a state change → root node
+2. That change triggers a subscriber → child node with `causes` edge to root
+3. Subscriber makes an API call → grandchild node
+4. API response triggers more state changes → great-grandchildren
+
+All connected automatically. No manual instrumentation.
+
+## Design Principles
+
+1. **Zero effort** — If you use unum, you get chronos for free
+2. **Complete** — Every state change captured, not just what devs remember to log
+3. **Structural** — Graph, not text. Relationships, not lines.
+4. **Queryable** — Semantic search, graph traversal, time-range queries
+5. **Distributed** — PluresDB Hyperswarm sync means multi-node observability with just a topic key
+6. **Minimal overhead** — Append-only writes, async batching, configurable retention
+
+## Roadmap
+
+- [ ] Core: unum subscription → PluresDB graph writer
+- [ ] Causal chain inference via AsyncLocalStorage
+- [ ] Time-range queries
+- [ ] Semantic search over state changes
+- [ ] Graph traversal API (trace forward/backward)
+- [ ] Subgraph extraction (by context/session)
+- [ ] Snapshot diff (compare two points in time)
+- [ ] Retention policies (TTL, importance-based pruning)
+- [ ] Dashboard UI (design-dojo component)
+- [ ] PluresDB Hyperswarm sync for distributed observability
+
+## Part of the Plures Ecosystem
+
+| Package | Role |
+|---------|------|
+| [PluresDB](https://github.com/plures/pluresdb) | Graph database with vector search + Hyperswarm |
+| [Unum](https://github.com/plures/unum) | Reactive state bindings (Svelte 5 ↔ PluresDB) |
+| **Chronos** | State chronicle (zero-effort observability) |
+| [Pares Agens](https://github.com/plures/pares-agens) | AI agent framework |
+| [Design Dojo](https://github.com/plures/design-dojo) | UI component library |
+| [Plures Vault](https://github.com/plures/plures-vault) | Encrypted secret storage |
+
+## License
+
+AGPL-3.0-or-later
