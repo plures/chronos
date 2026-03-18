@@ -55,9 +55,10 @@ export function createNode(path, before, after, contextId) {
  * @param {string} [options.contextId] - Default context for all nodes
  * @param {number} [options.batchMs]   - Batch write interval (default: 50ms)
  * @param {number} [options.maxBatch]  - Max nodes per batch (default: 100)
+ * @param {object} [options.writer]    - Persistent writer (from createPersistentWriter)
  */
 export function createChronos(db, options = {}) {
-  const { contextId = null, batchMs = 50, maxBatch = 100 } = options;
+  const { contextId = null, batchMs = 50, maxBatch = 100, writer = null } = options;
   const nodes = [];
   const edges = [];
   let pendingWrite = [];
@@ -80,29 +81,38 @@ export function createChronos(db, options = {}) {
     for (const node of batch) {
       nodes.push(node);
 
+      // Build edges
+      const batchEdges = [];
+
       // Write causal edge
       if (node.cause) {
-        edges.push({
+        const edge = {
           from: node.cause,
           to: node.id,
           type: 'causes',
           timestamp: node.timestamp,
-        });
+        };
+        edges.push(edge);
+        batchEdges.push(edge);
       }
 
       // Write context edge
       if (node.context) {
-        edges.push({
+        const edge = {
           from: node.context,
           to: node.id,
           type: 'context',
           timestamp: node.timestamp,
-        });
+        };
+        edges.push(edge);
+        batchEdges.push(edge);
+      }
+
+      // Persist if writer is available
+      if (writer) {
+        writer.writeBatch([node], batchEdges);
       }
     }
-
-    // TODO: Write batch to PluresDB graph storage
-    // For now, held in-memory for query
   }
 
   // ── Subscribe to unum/PluresDB changes ─────────────────────────────────
