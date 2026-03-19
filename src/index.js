@@ -1,24 +1,4 @@
-import { AsyncLocalStorage } from 'node:async_hooks';
-
-// ── Causal Context ──────────────────────────────────────────────────────────
-
-const causalContext = new AsyncLocalStorage();
-
-/**
- * Get the current causal parent ID from async context.
- * Returns null if we're at a root action.
- */
-export function currentCause() {
-  return causalContext.getStore()?.causeId ?? null;
-}
-
-/**
- * Run a function within a causal context, so any state changes
- * inside it are linked to the given cause node.
- */
-export function withCause(causeId, fn) {
-  return causalContext.run({ causeId }, fn);
-}
+import { currentCause, withCause } from './causal.js';
 
 // ── Chronicle Node ──────────────────────────────────────────────────────────
 
