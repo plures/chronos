@@ -1,13 +1,14 @@
 {
   "name": "@plures/chronos",
   "version": "0.1.0",
-  "description": "Graph-native application state chronicle — zero-effort observability through PluresDB state diffs",
+  "description": "Graph-native application state chronicle \u2014 zero-effort observability through PluresDB state diffs",
   "type": "module",
   "main": "src/index.js",
   "exports": {
     ".": "./src/index.js",
     "./trace": "./src/trace.js",
-    "./query": "./src/query.js"
+    "./query": "./src/query.js",
+    "./causal": "./src/causal.js"
   },
   "scripts": {
     "test": "vitest",
@@ -20,5 +21,8 @@
   "license": "AGPL-3.0-or-later",
   "devDependencies": {
     "vitest": "^3.0.0"
+  },
+  "browser": {
+    "node:async_hooks": false
   }
 }
