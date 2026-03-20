@@ -224,4 +224,4 @@ export function createChronos(db, options = {}) {
   };
 }
 
-export { withCause, currentCause, createNode };
+export { withCause, currentCause };
