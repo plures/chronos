@@ -63,7 +63,7 @@ export function createChronosEngine(options = {}) {
       maxNodes: null,
       burstThreshold: null,
       currentChain: null,
-      ...options.initialContext,
+      ...(options.initialContext ?? {}),
     },
     registry,
   });
