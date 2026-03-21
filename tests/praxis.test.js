@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { RuleResult, PraxisRegistry, createPraxisEngine } from '@plures/praxis';
+import { PraxisRegistry, createPraxisEngine } from '@plures/praxis';
 
 import {
   // diff-classification
