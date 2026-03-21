@@ -8,7 +8,9 @@
     ".": "./src/index.js",
     "./trace": "./src/trace.js",
     "./query": "./src/query.js",
-    "./causal": "./src/causal.js"
+    "./causal": "./src/causal.js",
+    "./praxis": "./src/praxis.js",
+    "./rules": "./src/rules/index.js"
   },
   "scripts": {
     "test": "vitest",
@@ -19,14 +21,14 @@
     "url": "https://github.com/plures/chronos.git"
   },
   "license": "AGPL-3.0-or-later",
+  "dependencies": {
+    "@plures/praxis": "^1.4.0"
+  },
   "devDependencies": {
+    "svelte": "^5.54.0",
     "vitest": "^3.0.0"
   },
   "browser": {
     "node:async_hooks": false
-  },
-  "dependencies": {
-    "@plures/praxis": "^1.4.0",
-    "svelte": "^5.54.0"
   }
 }
