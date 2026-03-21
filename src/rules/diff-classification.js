@@ -125,34 +125,40 @@ export const scoreImpactRule = defineRule({
     invariants: ['Impact score must be in the range [0, 100]'],
   },
   impl: (_state, events) => {
-    const event = events.find((e) => e.tag === DIFF_RECORDED);
-    if (!event) return RuleResult.skip('No diff.recorded event in batch');
-
-    const { nodeId, path, before, after } = event.payload;
-    const isDelete = after === null || after === undefined;
-    const isCriticalPath = /^(auth|security|permission|role)\b/.test(String(path ?? '')) ||
-      String(path ?? '').endsWith('.critical');
-
-    let base;
-    if (isCriticalPath) {
-      base = 80;
-    } else if (isDelete) {
-      base = 50;
-    } else {
-      base = 10;
+    const diffEvents = events.filter((e) => e.tag === DIFF_RECORDED);
+    if (diffEvents.length === 0) {
+      return RuleResult.skip('No diff.recorded event in batch');
     }
 
-    // Bonus based on payload size delta (up to +20)
-    const beforeSize = JSON.stringify(before ?? null).length;
-    const afterSize = JSON.stringify(after ?? null).length;
-    const sizeDelta = Math.abs(afterSize - beforeSize);
-    const sizeBonus = Math.min(20, Math.floor(sizeDelta / 50));
+    const impactFacts = diffEvents.map((event) => {
+      const { nodeId, path, before, after } = event.payload;
+      const isDelete = after === null || after === undefined;
+      const pathString = String(path ?? '');
+      const isCriticalPath =
+        /^(auth|security|permission|role)\b/.test(pathString) ||
+        pathString.endsWith('.critical');
 
-    const score = Math.min(100, base + sizeBonus);
+      let base;
+      if (isCriticalPath) {
+        base = 80;
+      } else if (isDelete) {
+        base = 50;
+      } else {
+        base = 10;
+      }
 
-    return RuleResult.emit([
-      { tag: 'chronos.diff.impactScore', payload: { nodeId, path, score } },
-    ]);
+      // Bonus based on payload size delta (up to +20)
+      const beforeSize = JSON.stringify(before ?? null).length;
+      const afterSize = JSON.stringify(after ?? null).length;
+      const sizeDelta = Math.abs(afterSize - beforeSize);
+      const sizeBonus = Math.min(20, Math.floor(sizeDelta / 50));
+
+      const score = Math.min(100, base + sizeBonus);
+
+      return { tag: 'chronos.diff.impactScore', payload: { nodeId, path, score } };
+    });
+
+    return RuleResult.emit(impactFacts);
   },
 });
 
