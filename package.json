@@ -1,7 +1,7 @@
 {
   "name": "@plures/chronos",
   "version": "0.1.0",
-  "description": "Graph-native application state chronicle \u2014 zero-effort observability through PluresDB state diffs",
+  "description": "Graph-native application state chronicle — zero-effort observability through PluresDB state diffs",
   "type": "module",
   "main": "src/index.js",
   "exports": {
@@ -24,5 +24,9 @@
   },
   "browser": {
     "node:async_hooks": false
+  },
+  "dependencies": {
+    "@plures/praxis": "^1.4.0",
+    "svelte": "^5.54.0"
   }
 }
