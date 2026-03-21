@@ -212,7 +212,12 @@ export const replayValidationRule = defineRule({
 
     for (const node of sorted) {
       if (node.diff && node.diff.after !== undefined) {
-        reconstructed[node.path] = node.diff.after;
+        if (node.diff.after === null) {
+          // Chronos convention: `after: null` represents a deletion
+          delete reconstructed[node.path];
+        } else {
+          reconstructed[node.path] = node.diff.after;
+        }
       }
     }
 
