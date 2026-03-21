@@ -139,6 +139,9 @@ export const gapDetectionRule = defineRule({
 
     const { chain, gapThresholdMs = 60_000 } = event.payload;
 
+    if (typeof gapThresholdMs !== 'number' || !Number.isFinite(gapThresholdMs) || gapThresholdMs <= 0) {
+      return RuleResult.skip('gapThresholdMs must be a positive number');
+    }
     if (!Array.isArray(chain) || chain.length < 2) {
       return RuleResult.noop('Not enough nodes for temporal gap detection');
     }
