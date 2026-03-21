@@ -55,6 +55,10 @@ export const agePruningRule = defineRule({
     if (!event) return RuleResult.skip('No retention audit event in batch');
 
     const { nodes, ttlMs = DEFAULT_TTL_MS, nowMs = Date.now() } = event.payload;
+
+    if (typeof ttlMs !== 'number' || !Number.isFinite(ttlMs) || ttlMs <= 0) {
+      return RuleResult.skip('Invalid ttlMs: must be a positive, finite number');
+    }
     if (!Array.isArray(nodes) || nodes.length === 0) {
       return RuleResult.noop('No nodes provided for audit');
     }
