@@ -55,6 +55,11 @@ export const agePruningRule = defineRule({
     if (!event) return RuleResult.skip('No retention audit event in batch');
 
     const { nodes, ttlMs = DEFAULT_TTL_MS, nowMs = Date.now() } = event.payload;
+
+    if (typeof ttlMs !== 'number' || !Number.isFinite(ttlMs) || ttlMs <= 0) {
+      return RuleResult.skip('Invalid ttlMs: must be a positive, finite number');
+    }
+
     if (!Array.isArray(nodes) || nodes.length === 0) {
       return RuleResult.noop('No nodes provided for audit');
     }
@@ -115,9 +120,31 @@ export const quotaEnforcementRule = defineRule({
       return RuleResult.noop('All nodes are critical; quota cannot be reduced');
     }
 
-    return RuleResult.emit([
-      { tag: 'chronos.retention.pruneEligible', payload: { reason: 'quota', nodeIds: toPrune } },
-    ]);
+    const remainingExcess = excess - toPrune.length;
+    const facts = [
+      {
+        tag: 'chronos.retention.pruneEligible',
+        payload: {
+          reason: 'quota',
+          nodeIds: toPrune,
+          remainingExcess: remainingExcess > 0 ? remainingExcess : 0,
+        },
+      },
+    ];
+
+    if (remainingExcess > 0) {
+      facts.push({
+        tag: 'chronos.retention.quotaStillExceeded',
+        payload: {
+          reason: 'quota',
+          remainingExcess,
+          maxNodes,
+          totalNodes: nodes.length,
+        },
+      });
+    }
+
+    return RuleResult.emit(facts);
   },
 });
 

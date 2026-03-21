@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { RuleResult, PraxisRegistry, createPraxisEngine } from '@plures/praxis';
+import { PraxisRegistry, createPraxisEngine } from '@plures/praxis';
 
 import {
   // diff-classification
@@ -42,7 +42,8 @@ import { createChronosEngine } from '../src/praxis.js';
 function makeEngine(module) {
   const registry = new PraxisRegistry();
   registry.registerModule(module);
-  return createPraxisEngine({ initialContext: {}, registry });
+  // Use 'append' so multiple same-tag facts from batch processing are preserved
+  return createPraxisEngine({ initialContext: {}, registry, factDedup: 'append' });
 }
 
 function stepWith(engine, tag, payload) {
@@ -51,6 +52,19 @@ function stepWith(engine, tag, payload) {
 
 function factsOf(result, tag) {
   return result.state.facts.filter((f) => f.tag === tag);
+}
+
+/**
+ * Deterministic djb2-style hash used to verify replay checksums in tests.
+ * Must match the simpleHash implementation in src/rules/integrity.js.
+ */
+function simpleHash(value) {
+  const str = JSON.stringify(value ?? null);
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+  }
+  return hash >>> 0;
 }
 
 // ── diff-classification ──────────────────────────────────────────────────────
@@ -99,6 +113,20 @@ describe('diff-classification module', () => {
       const result = engine.step([{ tag: 'some.other.event', payload: {} }]);
       const facts = factsOf(result, 'chronos.diff.classified');
       expect(facts).toHaveLength(0);
+    });
+
+    it('classifies all events in a multi-diff batch', () => {
+      const engine = makeEngine(diffClassificationModule);
+      const result = engine.step([
+        { tag: DIFF_RECORDED, payload: { nodeId: 'n1', path: 'a', before: null, after: 1 } },
+        { tag: DIFF_RECORDED, payload: { nodeId: 'n2', path: 'b', before: 1, after: null } },
+        { tag: DIFF_RECORDED, payload: { nodeId: 'n3', path: 'c', before: 'x', after: 'y' } },
+      ]);
+      const facts = factsOf(result, 'chronos.diff.classified');
+      expect(facts).toHaveLength(3);
+      expect(facts[0].payload.changeType).toBe('create');
+      expect(facts[1].payload.changeType).toBe('delete');
+      expect(facts[2].payload.changeType).toBe('update');
     });
   });
 
@@ -149,6 +177,20 @@ describe('diff-classification module', () => {
       });
       const facts = factsOf(result, 'chronos.diff.severity');
       expect(facts[0].payload.severity).toBe('critical');
+    });
+
+    it('assigns severity for all events in a multi-diff batch', () => {
+      const engine = makeEngine(diffClassificationModule);
+      const result = engine.step([
+        { tag: DIFF_RECORDED, payload: { nodeId: 'n1', path: 'auth.key', before: 'a', after: 'b' } },
+        { tag: DIFF_RECORDED, payload: { nodeId: 'n2', path: 'data.x', before: 'v', after: null } },
+        { tag: DIFF_RECORDED, payload: { nodeId: 'n3', path: 'data.y', before: null, after: 1 } },
+      ]);
+      const facts = factsOf(result, 'chronos.diff.severity');
+      expect(facts).toHaveLength(3);
+      expect(facts[0].payload.severity).toBe('critical');
+      expect(facts[1].payload.severity).toBe('warning');
+      expect(facts[2].payload.severity).toBe('info');
     });
   });
 
@@ -251,6 +293,14 @@ describe('retention-policy module', () => {
       const facts = factsOf(result, 'chronos.retention.pruneEligible');
       expect(facts).toHaveLength(0);
     });
+
+    it('skips when ttlMs is invalid', () => {
+      const engine = makeEngine(retentionPolicyModule);
+      const nodes = [{ id: 'n1', timestamp: nowMs - 1000, isCritical: false }];
+      const result = stepWith(engine, RETENTION_AUDIT_REQUESTED, { nodes, ttlMs: -1, nowMs });
+      // skip — no pruneEligible emitted
+      expect(factsOf(result, 'chronos.retention.pruneEligible')).toHaveLength(0);
+    });
   });
 
   describe('quotaEnforcementRule', () => {
@@ -276,6 +326,22 @@ describe('retention-policy module', () => {
       const result = stepWith(engine, RETENTION_AUDIT_REQUESTED, { nodes, maxNodes: 10, nowMs });
       const facts = factsOf(result, 'chronos.retention.pruneEligible');
       expect(facts).toHaveLength(0);
+    });
+
+    it('emits quotaStillExceeded when critical nodes prevent full quota satisfaction', () => {
+      const engine = makeEngine(retentionPolicyModule);
+      // 5 nodes over quota but 4 are critical — can only prune 1, leaving 4 over
+      const nodes = [
+        { id: 'oldest', timestamp: nowMs, isCritical: false },
+        ...Array.from({ length: 9 }, (_, i) => ({ id: `crit${i}`, timestamp: nowMs + i + 1, isCritical: true })),
+      ]; // 10 total, maxNodes=5 → excess=5, but only 1 non-critical
+      const result = stepWith(engine, RETENTION_AUDIT_REQUESTED, { nodes, maxNodes: 5, nowMs });
+      const pruneEligible = factsOf(result, 'chronos.retention.pruneEligible');
+      const quotaExceeded = factsOf(result, 'chronos.retention.quotaStillExceeded');
+      expect(pruneEligible).toHaveLength(1);
+      expect(pruneEligible[0].payload.remainingExcess).toBe(4);
+      expect(quotaExceeded).toHaveLength(1);
+      expect(quotaExceeded[0].payload.remainingExcess).toBe(4);
     });
   });
 
@@ -357,6 +423,23 @@ describe('alerting module', () => {
       const facts = factsOf(result, 'chronos.alert.burst');
       expect(facts).toHaveLength(0);
     });
+
+    it('uses context.burstThreshold over payload when set', () => {
+      const registry = new PraxisRegistry();
+      registry.registerModule(alertingModule);
+      // Context threshold = 10 (very low), payload threshold = 50 (high)
+      const engine = createPraxisEngine({ initialContext: { burstThreshold: 10 }, registry });
+      const recentNodes = Array.from({ length: 15 }, (_, i) => ({
+        id: `n${i}`,
+        timestamp: nowMs - i * 100,
+      }));
+      const result = engine.step([{
+        tag: ALERT_EVALUATION_REQUESTED,
+        payload: { recentNodes, burstThreshold: 50, windowMs: 5000, nowMs },
+      }]);
+      // Context threshold (10) takes precedence — 15 > 10 fires the alert
+      expect(factsOf(result, 'chronos.alert.burst')).toHaveLength(1);
+    });
   });
 
   describe('criticalSpikeRule', () => {
@@ -393,6 +476,26 @@ describe('alerting module', () => {
       });
       const facts = factsOf(result, 'chronos.alert.criticalSpike');
       expect(facts).toHaveLength(0);
+    });
+
+    it('skips when criticalRatioThreshold is out of range', () => {
+      const engine = makeEngine(alertingModule);
+      const recentNodes = [{ severity: 'critical' }];
+      const result = stepWith(engine, ALERT_EVALUATION_REQUESTED, {
+        recentNodes,
+        criticalRatioThreshold: 1.5,
+      });
+      expect(factsOf(result, 'chronos.alert.criticalSpike')).toHaveLength(0);
+    });
+
+    it('skips when criticalRatioThreshold is negative', () => {
+      const engine = makeEngine(alertingModule);
+      const recentNodes = [{ severity: 'info' }];
+      const result = stepWith(engine, ALERT_EVALUATION_REQUESTED, {
+        recentNodes,
+        criticalRatioThreshold: -0.1,
+      });
+      expect(factsOf(result, 'chronos.alert.criticalSpike')).toHaveLength(0);
     });
   });
 
@@ -439,6 +542,26 @@ describe('alerting module', () => {
       const facts = factsOf(result, 'chronos.alert.impactAnomaly');
       expect(facts).toHaveLength(0);
     });
+
+    it('ignores nodes with missing impactScore in statistics', () => {
+      const engine = makeEngine(alertingModule);
+      // 3 nodes with numeric scores, 2 without — should still compute correctly
+      const recentNodes = [
+        { id: 'n0', impactScore: 10 },
+        { id: 'n1' },                   // no impactScore
+        { id: 'n2', impactScore: 10 },
+        { id: 'n3', impactScore: 10 },
+        { id: 'n4' },                   // no impactScore
+      ];
+      // mean=10, stdDev=0 → zero variance noop
+      const result = stepWith(engine, ALERT_EVALUATION_REQUESTED, {
+        recentNodes,
+        latestNode: { id: 'latest', impactScore: 99 },
+        anomalyZThreshold: 2.5,
+      });
+      // Zero variance after filtering — noop, no anomaly
+      expect(factsOf(result, 'chronos.alert.impactAnomaly')).toHaveLength(0);
+    });
   });
 
   describe('positiveBurstThresholdConstraint', () => {
@@ -455,6 +578,11 @@ describe('alerting module', () => {
       const rn = positiveBurstThresholdConstraint.impl({ context: { burstThreshold: -5 } });
       expect(typeof r0).toBe('string');
       expect(typeof rn).toBe('string');
+    });
+
+    it('rejects non-integer floats', () => {
+      const result = positiveBurstThresholdConstraint.impl({ context: { burstThreshold: 50.5 } });
+      expect(typeof result).toBe('string');
     });
   });
 });
@@ -528,18 +656,22 @@ describe('integrity module', () => {
       });
       expect(factsOf(result, 'chronos.integrity.temporalGap')).toHaveLength(0);
     });
+
+    it('skips when gapThresholdMs is invalid', () => {
+      const engine = makeEngine(integrityModule);
+      const chain = [
+        { id: 'A', timestamp: 1000 },
+        { id: 'B', timestamp: 200000 },
+      ];
+      const result = stepWith(engine, INTEGRITY_CHECK_REQUESTED, {
+        chain,
+        gapThresholdMs: -1,
+      });
+      expect(factsOf(result, 'chronos.integrity.temporalGap')).toHaveLength(0);
+    });
   });
 
   describe('replayValidationRule', () => {
-    function simpleHash(value) {
-      const str = JSON.stringify(value ?? null);
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
-      }
-      return hash >>> 0;
-    }
-
     it('emits replayValid when checksum matches', () => {
       const engine = makeEngine(integrityModule);
       const nodes = [
@@ -569,6 +701,24 @@ describe('integrity module', () => {
         initialState: {},
       });
       expect(factsOf(result, 'chronos.integrity.replayMismatch')).toHaveLength(1);
+    });
+
+    it('treats after=null as a deletion (removes key from reconstructed state)', () => {
+      const engine = makeEngine(integrityModule);
+      const nodes = [
+        { id: 'n1', path: 'x', timestamp: 1, diff: { after: 42 } },
+        { id: 'n2', path: 'x', timestamp: 2, diff: { after: null } }, // delete
+      ];
+      // Expected state: x has been deleted, so the reconstructed object should be {}
+      const expectedState = {};
+      const expectedChecksum = simpleHash(expectedState);
+      const result = stepWith(engine, REPLAY_VALIDATION_REQUESTED, {
+        nodes,
+        expectedChecksum,
+        initialState: {},
+      });
+      expect(factsOf(result, 'chronos.integrity.replayValid')).toHaveLength(1);
+      expect(factsOf(result, 'chronos.integrity.replayMismatch')).toHaveLength(0);
     });
   });
 
@@ -619,5 +769,9 @@ describe('createChronosEngine', () => {
   it('respects custom initialContext', () => {
     const engine = createChronosEngine({ initialContext: { maxNodes: 500 } });
     expect(engine.getContext().maxNodes).toBe(500);
+  });
+
+  it('does not throw when initialContext is null', () => {
+    expect(() => createChronosEngine({ initialContext: null })).not.toThrow();
   });
 });

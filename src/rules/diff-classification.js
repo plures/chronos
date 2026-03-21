@@ -36,23 +36,25 @@ export const classifyChangeTypeRule = defineRule({
     invariants: ['Every recorded diff must be classified as exactly one change type'],
   },
   impl: (_state, events) => {
-    const event = events.find((e) => e.tag === DIFF_RECORDED);
-    if (!event) return RuleResult.skip('No diff.recorded event in batch');
+    const diffEvents = events.filter((e) => e.tag === DIFF_RECORDED);
+    if (diffEvents.length === 0) return RuleResult.skip('No diff.recorded event in batch');
 
-    const { nodeId, path, before, after } = event.payload;
-    let changeType;
+    const classifiedFacts = diffEvents.map((event) => {
+      const { nodeId, path, before, after } = event.payload;
+      let changeType;
 
-    if (before === null || before === undefined) {
-      changeType = 'create';
-    } else if (after === null || after === undefined) {
-      changeType = 'delete';
-    } else {
-      changeType = 'update';
-    }
+      if (before === null || before === undefined) {
+        changeType = 'create';
+      } else if (after === null || after === undefined) {
+        changeType = 'delete';
+      } else {
+        changeType = 'update';
+      }
 
-    return RuleResult.emit([
-      { tag: 'chronos.diff.classified', payload: { nodeId, path, changeType } },
-    ]);
+      return { tag: 'chronos.diff.classified', payload: { nodeId, path, changeType } };
+    });
+
+    return RuleResult.emit(classifiedFacts);
   },
 });
 
@@ -79,26 +81,28 @@ export const assignSeverityRule = defineRule({
     invariants: ['Every diff must receive exactly one severity assignment'],
   },
   impl: (_state, events) => {
-    const event = events.find((e) => e.tag === DIFF_RECORDED);
-    if (!event) return RuleResult.skip('No diff.recorded event in batch');
+    const diffEvents = events.filter((e) => e.tag === DIFF_RECORDED);
+    if (diffEvents.length === 0) return RuleResult.skip('No diff.recorded event in batch');
 
-    const { nodeId, path, before, after } = event.payload;
-    const isDelete = after === null || after === undefined;
-    const isCriticalPath = /^(auth|security|permission|role)\b/.test(String(path ?? '')) ||
-      String(path ?? '').endsWith('.critical');
+    const severityFacts = diffEvents.map((event) => {
+      const { nodeId, path, after } = event.payload;
+      const isDelete = after === null || after === undefined;
+      const isCriticalPath = /^(auth|security|permission|role)\b/.test(String(path ?? '')) ||
+        String(path ?? '').endsWith('.critical');
 
-    let severity;
-    if (isCriticalPath) {
-      severity = 'critical';
-    } else if (isDelete) {
-      severity = 'warning';
-    } else {
-      severity = 'info';
-    }
+      let severity;
+      if (isCriticalPath) {
+        severity = 'critical';
+      } else if (isDelete) {
+        severity = 'warning';
+      } else {
+        severity = 'info';
+      }
 
-    return RuleResult.emit([
-      { tag: 'chronos.diff.severity', payload: { nodeId, path, severity } },
-    ]);
+      return { tag: 'chronos.diff.severity', payload: { nodeId, path, severity } };
+    });
+
+    return RuleResult.emit(severityFacts);
   },
 });
 

@@ -54,16 +54,21 @@ export const burstDetectionRule = defineRule({
       'Alert must include the actual count and threshold in its payload',
     ],
   },
-  impl: (_state, events) => {
+  impl: (state, events) => {
     const event = events.find((e) => e.tag === ALERT_EVALUATION_REQUESTED);
     if (!event) return RuleResult.skip('No alert evaluation event in batch');
 
     const {
       recentNodes,
-      burstThreshold = DEFAULT_BURST_THRESHOLD,
       windowMs = DEFAULT_BURST_WINDOW_MS,
       nowMs = Date.now(),
     } = event.payload;
+
+    // Context is the authoritative source for burstThreshold; fall back to payload then default
+    const burstThreshold =
+      state && state.context && typeof state.context.burstThreshold === 'number'
+        ? state.context.burstThreshold
+        : (event.payload.burstThreshold ?? DEFAULT_BURST_THRESHOLD);
 
     if (!Array.isArray(recentNodes)) return RuleResult.skip('No nodes provided');
 
@@ -116,11 +121,21 @@ export const criticalSpikeRule = defineRule({
 
     const {
       recentNodes,
-      criticalRatioThreshold = DEFAULT_CRITICAL_RATIO_THRESHOLD,
+      criticalRatioThreshold: rawCriticalRatioThreshold = DEFAULT_CRITICAL_RATIO_THRESHOLD,
     } = event.payload;
 
     if (!Array.isArray(recentNodes) || recentNodes.length === 0) {
       return RuleResult.noop('No nodes to evaluate');
+    }
+
+    const criticalRatioThreshold = Number(rawCriticalRatioThreshold);
+    if (!Number.isFinite(criticalRatioThreshold)) {
+      return RuleResult.skip('Invalid criticalRatioThreshold: must be a finite number between 0 and 1');
+    }
+    if (criticalRatioThreshold < 0 || criticalRatioThreshold > 1) {
+      return RuleResult.skip(
+        `Invalid criticalRatioThreshold: must be between 0 and 1 (received ${String(rawCriticalRatioThreshold)})`
+      );
     }
 
     const criticalCount = recentNodes.filter((n) => n.severity === 'critical').length;
@@ -177,14 +192,20 @@ export const impactAnomalyRule = defineRule({
       anomalyZThreshold = DEFAULT_ANOMALY_Z_THRESHOLD,
     } = event.payload;
 
-    if (!Array.isArray(recentNodes) || recentNodes.length < 2) {
+    if (!Array.isArray(recentNodes)) {
       return RuleResult.noop('Not enough historical nodes for anomaly detection');
     }
     if (!latestNode || typeof latestNode.impactScore !== 'number') {
       return RuleResult.skip('Latest node has no impact score');
     }
 
-    const scores = recentNodes.map((n) => n.impactScore ?? 0);
+    const scores = recentNodes
+      .map((n) => n.impactScore)
+      .filter((score) => typeof score === 'number');
+
+    if (scores.length < 2) {
+      return RuleResult.noop('Not enough historical impact scores for anomaly detection');
+    }
     const mean = scores.reduce((s, v) => s + v, 0) / scores.length;
     const variance = scores.reduce((s, v) => s + (v - mean) ** 2, 0) / scores.length;
     const stdDev = Math.sqrt(variance);
@@ -224,18 +245,22 @@ export const positiveBurstThresholdConstraint = defineConstraint({
   description: 'burstThreshold must be a positive integer when specified',
   contract: {
     ruleId: 'chronos.alert.positiveBurstThreshold',
-    behavior: 'Guards against zero or negative burst threshold configuration',
+    behavior: 'Guards against non-positive or non-integer burst threshold configuration',
     examples: [
       { given: 'burstThreshold=50', when: 'constraint checked', then: 'passes' },
       { given: 'burstThreshold=-1', when: 'constraint checked', then: 'violation' },
     ],
-    invariants: ['burstThreshold must be > 0'],
+    invariants: ['burstThreshold must be a positive integer'],
   },
   impl: (state) => {
     const { burstThreshold } = state.context;
     if (burstThreshold === undefined || burstThreshold === null) return true;
-    if (typeof burstThreshold !== 'number' || burstThreshold <= 0) {
-      return `burstThreshold must be a positive number, got ${burstThreshold}`;
+    if (
+      typeof burstThreshold !== 'number' ||
+      !Number.isInteger(burstThreshold) ||
+      burstThreshold <= 0
+    ) {
+      return `burstThreshold must be a positive integer, got ${burstThreshold}`;
     }
     return true;
   },

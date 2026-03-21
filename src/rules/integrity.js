@@ -44,7 +44,7 @@ function simpleHash(value) {
  *
  * Verifies that every node in a causal chain has a corresponding `causes` edge
  * linking it to the previous node.  Emits `chronos.integrity.contiguous` on
- * success or `chronos.integrity.gap` for the first missing link.
+ * success or `chronos.integrity.gap` for all missing links found in the chain.
  */
 export const contiguityCheckRule = defineRule({
   id: 'chronos.integrity.contiguityCheck',
@@ -139,6 +139,10 @@ export const gapDetectionRule = defineRule({
 
     const { chain, gapThresholdMs = 60_000 } = event.payload;
 
+    if (typeof gapThresholdMs !== 'number' || !Number.isFinite(gapThresholdMs) || gapThresholdMs <= 0) {
+      return RuleResult.skip('gapThresholdMs must be a positive number');
+    }
+
     if (!Array.isArray(chain) || chain.length < 2) {
       return RuleResult.noop('Not enough nodes for temporal gap detection');
     }
@@ -212,7 +216,12 @@ export const replayValidationRule = defineRule({
 
     for (const node of sorted) {
       if (node.diff && node.diff.after !== undefined) {
-        reconstructed[node.path] = node.diff.after;
+        if (node.diff.after === null) {
+          // Chronos convention: `after: null` represents a deletion — remove the key
+          delete reconstructed[node.path];
+        } else {
+          reconstructed[node.path] = node.diff.after;
+        }
       }
     }
 

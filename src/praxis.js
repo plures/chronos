@@ -63,9 +63,11 @@ export function createChronosEngine(options = {}) {
       maxNodes: null,
       burstThreshold: null,
       currentChain: null,
-      ...options.initialContext,
+      ...(options.initialContext ?? {}),
     },
     registry,
+    // Chronos is an append-only chronicle — preserve all emitted facts per step
+    factDedup: 'append',
   });
 }
 
