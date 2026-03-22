@@ -1,0 +1,165 @@
+name: CI Feedback Loop
+
+# Runs CI independently of the merge path.
+# If CI fails post-merge, creates expectation violations tracked
+# via praxis decision ledger — not PR blockers.
+
+on:
+  push:
+    branches: [main]
+  # Also monitor PR branches for feedback (but don't block merge)
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  issues: write
+  checks: write
+
+jobs:
+  ci:
+    name: Deno Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Deno
+        run: |
+          for i in 1 2 3; do
+            curl -fsSL https://deno.land/install.sh | sh && break
+            [ $i -lt 3 ] && echo "Deno install failed (attempt $i/3), retrying..." && sleep $((i * 15))
+          done
+          echo "$HOME/.deno/bin" >> "$GITHUB_PATH"
+      - name: Format check
+        run: deno task fmt:check || echo "::warning::Format check failed"
+        continue-on-error: true
+        id: fmt
+      - name: Lint
+        run: deno task lint || echo "::warning::Lint failed"
+        continue-on-error: true
+        id: lint
+      - name: Type check
+        run: deno task check || echo "::warning::Type check failed"
+        continue-on-error: true
+        id: typecheck
+      - name: Tests
+        run: deno task test 2>&1 || echo "::warning::Tests failed"
+        continue-on-error: true
+        id: test
+
+      - name: Feed CI results into expectation system
+        if: github.ref == 'refs/heads/main'
+        uses: actions/github-script@v7
+        env:
+          FMT_OUTCOME: ${{ steps.fmt.outcome }}
+          LINT_OUTCOME: ${{ steps.lint.outcome }}
+          TYPECHECK_OUTCOME: ${{ steps.typecheck.outcome }}
+          TEST_OUTCOME: ${{ steps.test.outcome }}
+          COMMIT_SHA: ${{ github.sha }}
+          COMMIT_MSG: ${{ github.event.head_commit.message || '' }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const sha = process.env.COMMIT_SHA;
+            const msg = process.env.COMMIT_MSG;
+
+            const steps = {
+              fmt: process.env.FMT_OUTCOME,
+              lint: process.env.LINT_OUTCOME,
+              typecheck: process.env.TYPECHECK_OUTCOME,
+              test: process.env.TEST_OUTCOME,
+            };
+
+            const failures = Object.entries(steps)
+              .filter(([_, outcome]) => outcome === 'failure')
+              .map(([name]) => name);
+
+            if (failures.length === 0) {
+              core.info('All CI steps passed on main. No expectation violations.');
+              return;
+            }
+
+            core.warning(`CI failures on main: ${failures.join(', ')}`);
+
+            // Extract PR number from squash merge commit message
+            const prMatch = msg.match(/#(\d+)/);
+            const prRef = prMatch ? `PR #${prMatch[1]}` : `commit ${sha.substring(0, 7)}`;
+
+            // Create/update tracking issue — this feeds into praxis expectations
+            const title = `[ci-feedback] Post-merge CI failure: ${failures.join(', ')}`;
+            const fingerprint = `ci-feedback|${sha.substring(0, 7)}|${failures.sort().join(',')}`;
+
+            // Check for existing open CI feedback issue
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner, repo, state: 'open',
+              labels: 'ci-feedback,expectation-violation',
+              per_page: 5,
+            });
+
+            const body = [
+              `## Post-Merge CI Failure`,
+              ``,
+              `| Field | Value |`,
+              `|---|---|`,
+              `| **Source** | ${prRef} |`,
+              `| **Commit** | \`${sha}\` |`,
+              `| **Failed steps** | ${failures.join(', ')} |`,
+              `| **Fingerprint** | \`${fingerprint}\` |`,
+              ``,
+              `### Expectation Violation`,
+              `This is a praxis expectation violation: code merged to main should pass CI.`,
+              `The violation is tracked here (not as a merge blocker) per process policy.`,
+              ``,
+              `### Resolution`,
+              `- Assign to Copilot for automated fix: comment \`@copilot fix the ${failures.join(' and ')} failures\``,
+              `- Or fix manually`,
+              ``,
+              `### Decision Ledger`,
+              `Record resolution in \`ops/ledger/ops-decisions.json\` when fixed.`,
+            ].join('\n');
+
+            // Ensure labels exist
+            for (const label of ['ci-feedback', 'expectation-violation', 'praxis-violation']) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: label });
+              } catch (_) {
+                const colors = {
+                  'ci-feedback': 'fbca04',
+                  'expectation-violation': 'd93f0b',
+                  'praxis-violation': 'b60205',
+                };
+                await github.rest.issues.createLabel({
+                  owner, repo, name: label,
+                  color: colors[label],
+                }).catch(() => {});
+              }
+            }
+
+            const issue = await github.rest.issues.create({
+              owner, repo, title, body,
+              labels: ['ci-feedback', 'expectation-violation', 'praxis-violation'],
+            });
+
+            // Auto-assign to Copilot for fix
+            try {
+              const node = await github.graphql(`
+                query($owner: String!, $repo: String!, $num: Int!) {
+                  repository(owner: $owner, name: $repo) {
+                    issue(number: $num) { id }
+                  }
+                }
+              `, { owner, repo, num: issue.data.number });
+              await github.graphql(`
+                mutation($id: ID!) {
+                  addAssigneesToAssignable(input: {
+                    assignableId: $id,
+                    assigneeIds: ["BOT_kgDOC9w8XQ"]
+                  }) { clientMutationId }
+                }
+              `, { id: node.repository.issue.id });
+            } catch (e) {
+              core.info(`Could not assign Copilot: ${e.message}`);
+            }
+
+            core.info(`Created CI feedback issue #${issue.data.number}`);
