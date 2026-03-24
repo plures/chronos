@@ -12,7 +12,8 @@
     "./query": "./src/query.js",
     "./causal": "./src/causal.js",
     "./praxis": "./src/praxis.js",
-    "./rules": "./src/rules/index.js"
+    "./rules": "./src/rules/index.js",
+    "./time-travel": "./src/time-travel.js"
   },
   "scripts": {
     "test": "vitest",
