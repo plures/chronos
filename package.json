@@ -6,6 +6,8 @@
   "main": "src/index.js",
   "exports": {
     ".": "./src/index.js",
+    "./chronicle": "./src/chronicle.js",
+    "./diff": "./src/diff.js",
     "./trace": "./src/trace.js",
     "./query": "./src/query.js",
     "./causal": "./src/causal.js",
