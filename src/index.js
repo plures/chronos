@@ -147,8 +147,9 @@ export function createChronos(db, options = {}) {
   /**
    * Trace causality from a node.
    * @param {string} nodeId - Starting node
-   * @param {'backward'|'forward'} direction
+   * @param {'backward'|'forward'} [direction='backward']
    * @param {number} [maxDepth=10]
+   * @returns {object[]} Ordered list of ChronicleNodes
    */
   function trace(nodeId, { direction = 'backward', maxDepth = 10 } = {}) {
     const result = [];
@@ -180,6 +181,10 @@ export function createChronos(db, options = {}) {
 
   /**
    * Get all nodes within a time range.
+   *
+   * @param {number} startMs - Start timestamp (inclusive)
+   * @param {number} endMs   - End timestamp (inclusive)
+   * @returns {object[]} Matching nodes
    */
   function range(startMs, endMs) {
     return nodes.filter((n) => n.timestamp >= startMs && n.timestamp <= endMs);
@@ -187,6 +192,9 @@ export function createChronos(db, options = {}) {
 
   /**
    * Get all nodes for a given context (session/request).
+   *
+   * @param {string} ctxId - Context ID
+   * @returns {object[]} Nodes belonging to the context
    */
   function subgraph(ctxId) {
     const contextNodeIds = new Set(
@@ -197,6 +205,9 @@ export function createChronos(db, options = {}) {
 
   /**
    * Get all nodes for a specific path.
+   *
+   * @param {string} path - PluresDB path to query
+   * @returns {object[]} Nodes sorted by timestamp ascending
    */
   function history(path) {
     return nodes.filter((n) => n.path === path).sort((a, b) => a.timestamp - b.timestamp);
@@ -204,6 +215,8 @@ export function createChronos(db, options = {}) {
 
   /**
    * Total chronicle stats.
+   *
+   * @returns {{ nodes: number, edges: number, pending: number }}
    */
   function stats() {
     return {

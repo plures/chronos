@@ -41,6 +41,14 @@
     "./time-travel": {
       "types": "./src/time-travel.d.ts",
       "import": "./src/time-travel.js"
+    },
+    "./persistent": {
+      "types": "./src/persistent.d.ts",
+      "import": "./src/persistent.js"
+    },
+    "./semantic": {
+      "types": "./src/semantic.d.ts",
+      "import": "./src/semantic.js"
     }
   },
   "scripts": {

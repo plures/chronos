@@ -3,6 +3,8 @@
  *
  * Replaces the in-memory arrays with durable graph storage.
  * Uses PluresDB's CrdtStore for CRDT-based replication readiness.
+ *
+ * @module @plures/chronos/persistent
  */
 
 /**
@@ -11,6 +13,7 @@
  * @param {object} db - PluresDB CrdtStore instance
  * @param {object} [options]
  * @param {string} [options.prefix='chronos:'] - Key prefix for chronicle nodes
+ * @returns {object} PersistentWriter with writeBatch, queryRange, queryEdges, trace, history, stats
  */
 export function createPersistentWriter(db, options = {}) {
   const { prefix = 'chronos:' } = options;
@@ -135,6 +138,9 @@ export function createPersistentWriter(db, options = {}) {
 
   /**
    * Get history for a specific path (all state changes over time).
+   *
+   * @param {string} path - PluresDB path to query
+   * @returns {object[]} Matching nodes sorted by timestamp ascending
    */
   function history(path) {
     const records = db.list();
@@ -145,7 +151,9 @@ export function createPersistentWriter(db, options = {}) {
   }
 
   /**
-   * Count total nodes and edges.
+   * Count total nodes and edges in the persistent store.
+   *
+   * @returns {{ nodes: number, edges: number }}
    */
   function stats() {
     const records = db.list();

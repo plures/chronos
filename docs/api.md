@@ -15,9 +15,11 @@ Graph-native application state chronicle — zero-effort observability through P
 5. [Query API (`@plures/chronos/query`)](#query-api-plureschronosquery)
 6. [Trace API (`@plures/chronos/trace`)](#trace-api-plureschronostrace)
 7. [Time-travel debugger (`@plures/chronos/time-travel`)](#time-travel-debugger-plureschronostime-travel)
-8. [Praxis integration (`@plures/chronos/praxis`)](#praxis-integration-plureschronospraxis)
-9. [Rules barrel (`@plures/chronos/rules`)](#rules-barrel-plureschronosrules)
-10. [Types](#types)
+8. [Persistent writer (`@plures/chronos/persistent`)](#persistent-writer-plureschronospersistent)
+9. [Semantic search (`@plures/chronos/semantic`)](#semantic-search-plureschronossemantic)
+10. [Praxis integration (`@plures/chronos/praxis`)](#praxis-integration-plureschronospraxis)
+11. [Rules barrel (`@plures/chronos/rules`)](#rules-barrel-plureschronosrules)
+12. [Types](#types)
 
 ---
 
@@ -511,6 +513,147 @@ console.log(dbg.snapshot()); // → { 'todos.1': { text: 'buy milk' }, ... }
 
 ---
 
+## Persistent writer `@plures/chronos/persistent`
+
+```js
+import { createPersistentWriter } from '@plures/chronos/persistent';
+```
+
+Replaces the in-memory node/edge arrays with durable PluresDB storage using
+CrdtStore for CRDT-based replication readiness.  Pass the returned writer to
+`createChronicle` (or `createChronos`) via the `writer` option to automatically
+persist every captured change.
+
+### `createPersistentWriter(db, options?)`
+
+Create a PluresDB-backed chronicle writer.
+
+**Parameters**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `db` | `object` | — | PluresDB CrdtStore instance |
+| `options.prefix` | `string` | `'chronos:'` | Key prefix for all stored records |
+
+**Returns** `PersistentWriter`
+
+| Member | Signature | Description |
+|--------|-----------|-------------|
+| `writeBatch(nodes, edges)` | `(ChronicleNode[], ChronicleEdge[]) => void` | Persist a batch of nodes and edges |
+| `queryRange(startMs, endMs)` | `(number, number) => ChronicleNode[]` | All nodes within a timestamp range |
+| `queryEdges(nodeId, edgeType?)` | `(string, EdgeType?) => ChronicleEdge[]` | All edges touching a node |
+| `trace(nodeId, opts?)` | `(string, object?) => ChronicleNode[]` | Causal-chain traversal from persistent store |
+| `history(path)` | `(string) => ChronicleNode[]` | All changes for a path, sorted by time |
+| `stats()` | `() => { nodes, edges }` | Count stored nodes and edges |
+
+**Example**
+
+```js
+import { createChronicle } from '@plures/chronos/chronicle';
+import { createPersistentWriter } from '@plures/chronos/persistent';
+
+const writer = createPersistentWriter(db);
+const chronicle = createChronicle(db, { writer });
+
+// All future state changes are now persisted to PluresDB
+chronicle.stop();
+
+// Query persisted history
+const history = writer.history('todos.1');
+console.log(history); // → [ChronicleNode, ...]
+
+// Check storage stats
+console.log(writer.stats()); // → { nodes: 42, edges: 37 }
+```
+
+---
+
+## Semantic search `@plures/chronos/semantic`
+
+```js
+import { createSemanticIndex } from '@plures/chronos/semantic';
+```
+
+Provides vector-based natural-language search over chronicle state changes.
+Requires a user-supplied embedding function to convert diff text to vectors.
+Internally uses cosine similarity with a brute-force kNN search.
+
+### `createSemanticIndex(db, options)`
+
+Create a semantic search index over chronicle nodes.
+
+**Parameters**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `db` | `object` | — | PluresDB CrdtStore instance (used by `indexAll` and `searchAndTrace`) |
+| `options.embed` | `async (text: string) => number[]` | — | **Required.** Embedding function |
+| `options.prefix` | `string` | `'chronos:'` | Key prefix for stored nodes |
+| `options.dimensions` | `number` | `384` | Vector dimensions — must match `embed` output |
+
+**Returns** `SemanticIndex`
+
+| Member | Signature | Description |
+|--------|-----------|-------------|
+| `indexNode(node)` | `(ChronicleNode) => Promise<void>` | Embed and index a single node |
+| `indexBatch(nodes)` | `(ChronicleNode[]) => Promise<void>` | Embed and index multiple nodes in parallel |
+| `indexAll()` | `() => Promise<number>` | Index all nodes from the persistent store; returns count |
+| `search(query, opts?)` | `(string, SemanticSearchOptions?) => Promise<SemanticSearchResult[]>` | Search by natural language |
+| `searchAndTrace(query, opts?)` | `(string, object?) => Promise<SearchAndTraceResult[]>` | Search and walk causal chains |
+| `stats()` | `() => { indexed, dimensions }` | Index statistics |
+| `diffToText(node)` | `(ChronicleNode) => string` | Convert a node to searchable text (exposed for testing) |
+
+**`search` options**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `topK` | `number` | `5` | Maximum number of results |
+| `minScore` | `number` | `0.3` | Minimum cosine similarity threshold |
+| `startMs` | `number` | — | Lower timestamp bound |
+| `endMs` | `number` | — | Upper timestamp bound |
+| `path` | `string` | — | Path prefix filter |
+
+**`searchAndTrace` options**
+
+Same as `search` options plus:
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `traceDepth` | `number` | `5` | Maximum causal-chain hops from each match |
+
+**Example**
+
+```js
+import { createSemanticIndex } from '@plures/chronos/semantic';
+import { createPersistentWriter } from '@plures/chronos/persistent';
+
+// Provide your own embedding function (e.g. via @xenova/transformers or an API)
+async function embed(text) {
+  // ... return number[] of length 384
+}
+
+const writer = createPersistentWriter(db);
+const index = createSemanticIndex(db, { embed, dimensions: 384 });
+
+// Index nodes as they are recorded
+await index.indexBatch(chronicle._nodes);
+
+// Natural language search
+const results = await index.search('what changed in the user profile?', { topK: 3 });
+for (const { node, score, text } of results) {
+  console.log(score.toFixed(3), node.path, text);
+}
+
+// Search and immediately walk causal chains
+const chains = await index.searchAndTrace('authentication failure', { topK: 2, traceDepth: 5 });
+for (const { match, chain } of chains) {
+  console.log('Match:', match.node.path);
+  console.log('Root cause chain:', chain.map((n) => n.path));
+}
+```
+
+---
+
 ## Praxis integration `@plures/chronos/praxis`
 
 ```js
@@ -525,6 +668,7 @@ Create a Praxis logic engine pre-loaded with all four Chronos rule modules:
 - `retention-policy` — snapshot pruning, quota enforcement, archival
 - `alerting` — burst detection, critical spike, anomaly detection
 - `integrity` — contiguity, gap detection, replay validation
+
 
 **Parameters**
 
