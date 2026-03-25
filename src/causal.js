@@ -52,9 +52,11 @@ export function withCause(causeId, fn) {
 
   // Browser fallback: stack-based
   _stack.push(causeId);
+  let isAsync = false;
   try {
     const result = fn();
     if (result && typeof result.then === 'function') {
+      isAsync = true;
       return result.finally(() => {
         const idx = _stack.lastIndexOf(causeId);
         if (idx >= 0) _stack.splice(idx, 1);
@@ -62,8 +64,11 @@ export function withCause(causeId, fn) {
     }
     return result;
   } finally {
-    // Sync cleanup
-    const idx = _stack.lastIndexOf(causeId);
-    if (idx >= 0) _stack.splice(idx, 1);
+    // Only clean up synchronously when fn() did not return a promise; async
+    // cleanup is handled by the result.finally() callback above.
+    if (!isAsync) {
+      const idx = _stack.lastIndexOf(causeId);
+      if (idx >= 0) _stack.splice(idx, 1);
+    }
   }
 }
