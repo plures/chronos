@@ -255,12 +255,23 @@ export function createChronicle(db, options = {}) {
     return result;
   }
 
-  /** Return all nodes within a timestamp range (inclusive). */
+  /**
+   * Return all nodes within a timestamp range (inclusive).
+   *
+   * @param {number} startMs - Start timestamp (inclusive)
+   * @param {number} endMs   - End timestamp (inclusive)
+   * @returns {object[]} Matching nodes
+   */
   function range(startMs, endMs) {
     return nodes.filter((n) => n.timestamp >= startMs && n.timestamp <= endMs);
   }
 
-  /** Return all nodes belonging to a context (session / request). */
+  /**
+   * Return all nodes belonging to a context (session / request).
+   *
+   * @param {string} ctxId - Context ID
+   * @returns {object[]} Nodes belonging to the context
+   */
   function subgraph(ctxId) {
     const ids = new Set(
       edges.filter((e) => e.type === 'context' && e.from === ctxId).map((e) => e.to)
@@ -268,12 +279,21 @@ export function createChronicle(db, options = {}) {
     return nodes.filter((n) => ids.has(n.id));
   }
 
-  /** Return all changes for a path, ordered by timestamp. */
+  /**
+   * Return all changes for a path, ordered by timestamp.
+   *
+   * @param {string} path - PluresDB path to query
+   * @returns {object[]} Nodes sorted by timestamp ascending
+   */
   function history(path) {
     return nodes.filter((n) => n.path === path).sort((a, b) => a.timestamp - b.timestamp);
   }
 
-  /** Summary counters. */
+  /**
+   * Summary counters.
+   *
+   * @returns {{ nodes: number, edges: number, pending: number }}
+   */
   function stats() {
     return { nodes: nodes.length, edges: edges.length, pending: pendingWrite.length };
   }

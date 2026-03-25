@@ -5,6 +5,8 @@
  * queries over state history: "what changed in the user profile?"
  *
  * Requires an embedding function to convert state diffs to vectors.
+ *
+ * @module @plures/chronos/semantic
  */
 
 /**
@@ -15,6 +17,7 @@
  * @param {function} options.embed - async (text: string) => number[] — embedding function
  * @param {string} [options.prefix='chronos:'] - Key prefix for chronicle nodes
  * @param {number} [options.dimensions=384] - Vector dimensions (must match embed output)
+ * @returns {object} SemanticIndex with indexNode, indexBatch, indexAll, search, searchAndTrace, stats
  */
 export function createSemanticIndex(db, options = {}) {
   const { embed, prefix = 'chronos:', dimensions = 384 } = options;
@@ -28,6 +31,9 @@ export function createSemanticIndex(db, options = {}) {
 
   /**
    * Convert a chronicle node's diff into searchable text.
+   *
+   * @param {object} node - ChronicleNode to convert
+   * @returns {string} Human-readable text representation of the diff
    */
   function diffToText(node) {
     const parts = [`path:${node.path}`];
@@ -47,6 +53,10 @@ export function createSemanticIndex(db, options = {}) {
 
   /**
    * Cosine similarity between two vectors.
+   *
+   * @param {number[]} a - First vector
+   * @param {number[]} b - Second vector
+   * @returns {number} Cosine similarity score in the range [0, 1]
    */
   function cosineSimilarity(a, b) {
     let dot = 0, normA = 0, normB = 0;
@@ -61,6 +71,9 @@ export function createSemanticIndex(db, options = {}) {
 
   /**
    * Index a single chronicle node.
+   *
+   * @param {object} node - ChronicleNode to index
+   * @returns {Promise<void>}
    */
   async function indexNode(node) {
     const text = diffToText(node);
@@ -70,6 +83,9 @@ export function createSemanticIndex(db, options = {}) {
 
   /**
    * Index multiple nodes in batch.
+   *
+   * @param {object[]} nodes - Array of ChronicleNodes to index
+   * @returns {Promise<void>}
    */
   async function indexBatch(nodes) {
     await Promise.all(nodes.map(indexNode));
@@ -77,6 +93,8 @@ export function createSemanticIndex(db, options = {}) {
 
   /**
    * Index all chronicle nodes from the persistent store.
+   *
+   * @returns {Promise<number>} Number of nodes indexed
    */
   async function indexAll() {
     const records = db.list();
@@ -171,6 +189,8 @@ export function createSemanticIndex(db, options = {}) {
 
   /**
    * Stats about the semantic index.
+   *
+   * @returns {{ indexed: number, dimensions: number }}
    */
   function stats() {
     return {
