@@ -1,3 +1,11 @@
+/**
+ * Chronos — main entry point (legacy).
+ *
+ * For new projects, prefer `@plures/chronos/chronicle`.
+ *
+ * @module @plures/chronos
+ */
+
 import { currentCause, withCause } from './causal.js';
 
 // ── Chronicle Node ──────────────────────────────────────────────────────────
@@ -11,7 +19,7 @@ let nodeCounter = 0;
  * @param {*}      before   - Previous value (null for creates)
  * @param {*}      after    - New value (null for deletes)
  * @param {string} [contextId] - Session/request context
- * @returns {ChronicleNode}
+ * @returns {ChronicleNode} The newly created chronicle node
  */
 export function createNode(path, before, after, contextId) {
   return {
@@ -36,6 +44,7 @@ export function createNode(path, before, after, contextId) {
  * @param {number} [options.batchMs]   - Batch write interval (default: 50ms)
  * @param {number} [options.maxBatch]  - Max nodes per batch (default: 100)
  * @param {object} [options.writer]    - Persistent writer (from createPersistentWriter)
+ * @returns {object} ChronosInstance with start, stop, flush, trace, range, subgraph, history, stats
  */
 export function createChronos(db, options = {}) {
   const { contextId = null, batchMs = 50, maxBatch = 100, writer = null } = options;

@@ -1,9 +1,39 @@
+/**
+ * Chronicle — canonical implementation.
+ *
+ * Wraps a PluresDB instance and records all state changes as a causal graph
+ * with minimal JSON diffs. Prefer this over the main entry point for new projects.
+ *
+ * @module @plures/chronos/chronicle
+ */
+
 import { currentCause, withCause } from './causal.js';
 import { computeDiff } from './diff.js';
 
 // ── Chronicle Node ───────────────────────────────────────────────────────────
 
 let _nodeCounter = 0;
+
+/**
+ * @typedef {object} ChronicleNode
+ * @property {string}      id        - Unique node ID (`chrono:{timestamp}-{counter}`)
+ * @property {number}      timestamp - Unix timestamp in milliseconds
+ * @property {string}      path      - PluresDB path that changed
+ * @property {object}      diff      - Diff descriptor
+ * @property {*}           diff.before  - Previous value (null for creates)
+ * @property {*}           diff.after   - New value (null for deletes)
+ * @property {DiffDescriptor|null} [diff.minimal] - Minimal structural diff
+ * @property {string|null} cause     - ID of the causal parent node, or null
+ * @property {string|null} context   - Session / request context ID, or null
+ */
+
+/**
+ * @typedef {object} ChronicleEdge
+ * @property {string} from      - Source node ID
+ * @property {string} to        - Target node ID
+ * @property {'causes'|'context'|'reverts'|'concurrent'} type - Edge type
+ * @property {number} timestamp - Unix timestamp in milliseconds
+ */
 
 /**
  * Create a ChronicleNode from a state diff.
@@ -47,6 +77,7 @@ export function createChronicleNode(path, before, after, contextId) {
  * @param {number} [options.maxBatch]   - Max nodes flushed per tick (default: 100)
  * @param {object} [options.writer]     - Optional persistent writer
  *                                        (e.g. from `createPersistentWriter`)
+ * @returns {object} ChronicleInstance with start, stop, flush, trace, range, subgraph, history, stats
  */
 export function createChronicle(db, options = {}) {
   const { contextId = null, debounceMs = 0, maxBatch = 100, writer = null } = options;

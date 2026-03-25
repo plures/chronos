@@ -7,6 +7,18 @@
  *   - `{ op: 'delete', from }`               — value → null/undefined
  *   - `{ op: 'replace', from, value }`       — primitive or type change
  *   - `{ op: 'patch', changes: { key: diff }}` — object/array field-level diff
+ *
+ * @module @plures/chronos/diff
+ */
+
+/**
+ * @typedef {{ op: 'create', value: * }
+ *   | { op: 'delete', from: * }
+ *   | { op: 'replace', from: *, value: * }
+ *   | { op: 'patch', changes: Object.<string|number, DiffDescriptor> }} DiffDescriptor
+ *
+ * Minimal structural diff between two JSON-serializable values.
+ * The `patch` variant uses string keys for object fields and numeric keys for array indices.
  */
 
 /**
@@ -14,7 +26,7 @@
  *
  * @param {*} before - Previous value
  * @param {*} after  - New value
- * @returns {object|null} Diff descriptor, or null if identical
+ * @returns {DiffDescriptor|null} Diff descriptor, or null if identical
  */
 export function computeDiff(before, after) {
   // Fast-path: strict equality (covers same primitives, same reference)
