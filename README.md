@@ -4,6 +4,29 @@
 
 > "The best log is one no developer had to write."
 
+[![CI](https://github.com/plures/chronos/actions/workflows/ci-feedback-loop.yml/badge.svg)](https://github.com/plures/chronos/actions/workflows/ci-feedback-loop.yml)
+[![npm version](https://img.shields.io/npm/v/@plures/chronos.svg)](https://www.npmjs.com/package/@plures/chronos)
+[![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue.svg)](./LICENSE)
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [The Problem](#the-problem)
+- [The Insight](#the-insight)
+- [How It Works](#how-it-works)
+- [The Graph Model](#the-graph-model)
+- [Querying](#querying)
+- [Integration with Unum](#integration-with-unum)
+- [Architecture](#architecture)
+- [Design Principles](#design-principles)
+- [Development](#development)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [Security](#security)
+- [Part of the Plures Ecosystem](#part-of-the-plures-ecosystem)
+- [License](#license)
+
 ## Installation
 
 ```bash
@@ -197,6 +220,33 @@ All connected automatically. No manual instrumentation.
 5. **Distributed** — PluresDB Hyperswarm sync means multi-node observability with just a topic key
 6. **Minimal overhead** — Append-only writes, async batching, configurable retention
 
+## Development
+
+### Prerequisites
+
+- Node.js ≥ 18
+- npm ≥ 9
+
+### Setup
+
+```bash
+git clone https://github.com/plures/chronos.git
+cd chronos
+npm install
+```
+
+### Running Tests
+
+```bash
+# Run the full test suite (watch mode)
+npm test
+
+# Single run (CI mode)
+npm run test:run
+```
+
+All tests are colocated under `tests/` and use [Vitest](https://vitest.dev/).
+
 ## Roadmap
 
 - [x] Core: PluresDB subscription → causal graph chronicle
@@ -211,6 +261,22 @@ All connected automatically. No manual instrumentation.
 - [ ] Semantic search over state changes
 - [ ] Dashboard UI (design-dojo component)
 - [ ] PluresDB Hyperswarm sync for distributed observability
+
+## Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a pull request.
+
+In short:
+
+1. Fork the repo and create a feature branch (`git checkout -b feat/my-feature`)
+2. Make your changes and add tests
+3. Run `npm run test:run` and ensure all tests pass
+4. Open a PR against `main` with a conventional-commit title (e.g. `feat: add X`)
+
+## Security
+
+Please do not report security vulnerabilities through public GitHub issues.
+See our [security policy](.github/SECURITY.md) for the responsible disclosure process.
 
 ## Part of the Plures Ecosystem
 
