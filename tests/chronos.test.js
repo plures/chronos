@@ -208,4 +208,43 @@ describe('createChronos', () => {
     chronos.flush();
     expect(chronos.stats().nodes).toBe(1); // unsubscribed, no new nodes
   });
+
+  it('throws when db does not have a .on() method', () => {
+    expect(() => createChronos({})).toThrow(
+      'Chronos requires a PluresDB instance with .on() subscription support'
+    );
+    expect(() => createChronos(null)).toThrow(
+      'Chronos requires a PluresDB instance with .on() subscription support'
+    );
+  });
+
+  it('creates context edges when contextId option is set', async () => {
+    const ctxDb = createMockDb();
+    const ctxChronos = createChronos(ctxDb, { batchMs: 0, contextId: 'session:99' });
+
+    ctxDb.emit('value', 'path.x');
+    await new Promise((r) => setTimeout(r, 10));
+    ctxChronos.flush();
+
+    expect(ctxChronos._edges.some((e) => e.type === 'context' && e.from === 'session:99')).toBe(true);
+    ctxChronos.stop();
+  });
+
+  it('subgraph returns nodes belonging to a given context', async () => {
+    const ctxDb = createMockDb();
+    const ctxChronos = createChronos(ctxDb, { batchMs: 0, contextId: 'req:42' });
+
+    ctxDb.emit('a', 'p1');
+    ctxDb.emit('b', 'p2');
+    await new Promise((r) => setTimeout(r, 10));
+    ctxChronos.flush();
+
+    const nodes = ctxChronos.subgraph('req:42');
+    expect(nodes.length).toBe(2);
+    ctxChronos.stop();
+  });
+
+  it('subgraph returns empty array for unknown context', () => {
+    expect(chronos.subgraph('nonexistent')).toEqual([]);
+  });
 });
