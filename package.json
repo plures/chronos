@@ -61,6 +61,17 @@
     "type": "git",
     "url": "https://github.com/plures/chronos.git"
   },
+  "files": [
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@plures/praxis": "^2.4.19"
