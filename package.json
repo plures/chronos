@@ -28,8 +28,8 @@
     "@plures/praxis": "^1.4.0"
   },
   "devDependencies": {
-    "svelte": "^5.54.0",
-    "vitest": "^3.0.0"
+    "svelte": "^5.55.0",
+    "vitest": "^4.1.1"
   },
   "browser": {
     "node:async_hooks": false
