@@ -4,6 +4,8 @@
  * Pure utility functions for walking causal graphs from a set of chronicle
  * nodes and edges. Works identically for in-memory chronicle data and data
  * loaded from the persistent PluresDB writer.
+ *
+ * @module @plures/chronos/trace
  */
 
 /**

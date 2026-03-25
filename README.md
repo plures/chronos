@@ -4,6 +4,31 @@
 
 > "The best log is one no developer had to write."
 
+## Installation
+
+```bash
+npm install @plures/chronos
+```
+
+> Requires Node.js ≥ 18 or a modern browser. ESM only.
+
+## Quick Start
+
+```javascript
+import { createChronicle } from '@plures/chronos/chronicle';
+
+// One line. Every state change is now chronicled.
+const chronicle = createChronicle(db);
+
+// Inspect history
+const history = chronicle.history('todos.1');
+// → [{ id, timestamp, path, diff: { before: null, after: { text: 'buy milk' } }, ... }]
+
+chronicle.stop();
+```
+
+📖 **[Full API Reference →](./docs/api.md)**
+
 ## The Problem
 
 Traditional application logging is broken:
@@ -68,23 +93,42 @@ UserAction(click_submit)
 Replace `grep "ERROR" | tail -100` with graph queries:
 
 ```javascript
-import { chronos } from '@plures/chronos';
+import { createChronicle } from '@plures/chronos/chronicle';
+import { traceCausalChain } from '@plures/chronos/trace';
+import { query } from '@plures/chronos/query';
+import { createTimeTravelDebugger } from '@plures/chronos/time-travel';
+
+const chronicle = createChronicle(db, { contextId: 'session:abc123' });
 
 // What caused this error state?
-const causes = await chronos.trace('request.error', { direction: 'backward' });
+const causes = traceCausalChain(
+  chronicle._nodes, chronicle._edges, errorNodeId, { direction: 'backward' }
+);
 
 // What did this user action affect?
-const effects = await chronos.trace(actionNode, { direction: 'forward' });
+const effects = traceCausalChain(
+  chronicle._nodes, chronicle._edges, actionNodeId, { direction: 'forward' }
+);
 
-// Everything that happened in this session
-const session = await chronos.subgraph({ context: 'session:abc123' });
+// Everything that changed in this session
+const sessionNodes = query(chronicle._nodes, chronicle._edges, {
+  contextId: 'session:abc123',
+});
 
-// Semantic search across all state changes
-const results = await chronos.search('authentication failures');
+// All changes to 'todos' in the last hour
+const recentTodos = query(chronicle._nodes, [], {
+  pathPrefix: 'todos.',
+  startMs: Date.now() - 60 * 60 * 1000,
+});
 
-// Diff between working and broken states
-const diff = await chronos.diff(workingSnapshot, brokenSnapshot);
+// Step through history interactively
+const debugger_ = createTimeTravelDebugger(chronicle._nodes);
+while (debugger_.stepForward()) {
+  console.log(debugger_.current().path, debugger_.snapshot());
+}
 ```
+
+See [`docs/api.md`](./docs/api.md) for the complete API reference.
 
 ## Integration with Unum
 
@@ -111,16 +155,16 @@ Each state change becomes a `ChronicleNode`:
 
 ```typescript
 interface ChronicleNode {
-  id: string;              // Unique node ID
+  id: string;              // Unique node ID (format: "chrono:{timestamp}-{counter}")
   timestamp: number;       // Unix ms
   path: string;            // PluresDB path that changed (e.g. "todos.abc123")
   diff: {
-    before: any;           // Previous value (null for creates)
-    after: any;            // New value (null for deletes)
+    before: unknown;       // Previous value (null for creates)
+    after: unknown;        // New value (null for deletes)
+    minimal?: DiffDescriptor | null; // Minimal structural diff (chronicle nodes only)
   };
-  cause?: string;          // ID of the node that caused this change
-  context?: string;        // Session/request/transaction context ID
-  stack?: string[];        // Async context chain (automatic)
+  cause: string | null;    // ID of the node that caused this change
+  context: string | null;  // Session/request/transaction context ID
 }
 ```
 
@@ -155,14 +199,16 @@ All connected automatically. No manual instrumentation.
 
 ## Roadmap
 
-- [ ] Core: unum subscription → PluresDB graph writer
-- [ ] Causal chain inference via AsyncLocalStorage
-- [ ] Time-range queries
+- [x] Core: PluresDB subscription → causal graph chronicle
+- [x] Causal chain inference via AsyncLocalStorage
+- [x] Time-range queries (`@plures/chronos/query`)
+- [x] Graph traversal API — trace forward/backward (`@plures/chronos/trace`)
+- [x] Subgraph extraction by context/session
+- [x] Snapshot diff — minimal JSON diff engine (`@plures/chronos/diff`)
+- [x] Retention policies — TTL, quota, archival (`@plures/chronos/rules`)
+- [x] Time-travel debugger — step forward/backward through history
+- [x] Praxis rule engine integration
 - [ ] Semantic search over state changes
-- [ ] Graph traversal API (trace forward/backward)
-- [ ] Subgraph extraction (by context/session)
-- [ ] Snapshot diff (compare two points in time)
-- [ ] Retention policies (TTL, importance-based pruning)
 - [ ] Dashboard UI (design-dojo component)
 - [ ] PluresDB Hyperswarm sync for distributed observability
 

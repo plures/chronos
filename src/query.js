@@ -7,6 +7,8 @@
  * in-memory chronicle data and records loaded from the persistent writer.
  *
  * For causal-chain traversal see `@plures/chronos/trace`.
+ *
+ * @module @plures/chronos/query
  */
 
 // ── Individual filter helpers ────────────────────────────────────────────────

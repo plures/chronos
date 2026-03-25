@@ -3,6 +3,8 @@
  *
  * Node: uses AsyncLocalStorage for true async propagation.
  * Browser: uses a simple stack (sufficient for sync + microtask patterns).
+ *
+ * @module @plures/chronos/causal
  */
 
 let _als = null;
@@ -30,6 +32,8 @@ getALS();
 
 /**
  * Get the current causal parent ID.
+ *
+ * @returns {string|null} The active causal parent ID, or `null` when outside a causal scope.
  */
 export function currentCause() {
   if (_als) return _als.getStore()?.causeId ?? null;
@@ -38,6 +42,10 @@ export function currentCause() {
 
 /**
  * Run a function within a causal context.
+ *
+ * @param {string} causeId - ID of the parent node to set as the active cause
+ * @param {function} fn - Synchronous or async function to execute inside the scope
+ * @returns {*} The return value of `fn`
  */
 export function withCause(causeId, fn) {
   if (_als) return _als.run({ causeId }, fn);
