@@ -75,7 +75,7 @@
   },
   "license": "AGPL-3.0-or-later",
   "dependencies": {
-    "@plures/praxis": "^2.4.27"
+    "@plures/praxis": "^2.4.33"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.1",
