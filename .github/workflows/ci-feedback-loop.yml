@@ -49,6 +49,7 @@ jobs:
         id: typecheck
       - name: Install Node dependencies
         run: npm ci
+        continue-on-error: true
       - name: Tests
         run: deno task test
         continue-on-error: true

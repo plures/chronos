@@ -1,6 +1,10 @@
 name: Tech Doc Writer
 
 on:
+  # Explicit push trigger so GitHub routes push events to this workflow
+  # and evaluates the job condition normally (skipped = success) instead
+  # of creating a 0-job run (which GitHub marks as failure).
+  push:
   pull_request:
     types: [closed]
 
