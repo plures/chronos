@@ -70,7 +70,7 @@ function simpleHash(value) {
  * linking it to the previous node.  Emits `chronos.integrity.contiguous` on
  * success or `chronos.integrity.gap` for all missing links found in the chain.
  *
- * @type {import('@plures/praxis').RuleDescriptor}
+ * @type {object}
  * @example
  * ```js
  * import { createChronosEngine } from '@plures/chronos/praxis';
@@ -153,7 +153,7 @@ export const contiguityCheckRule = defineRule({
  * Scans a time-ordered list of nodes for temporal gaps larger than a configured
  * threshold.  A temporal gap indicates potentially missing chronicle entries.
  *
- * @type {import('@plures/praxis').RuleDescriptor}
+ * @type {object}
  * @example
  * ```js
  * import { createChronosEngine } from '@plures/chronos/praxis';
@@ -232,7 +232,7 @@ export const gapDetectionRule = defineRule({
  * checksum matches the expected value.  Emits `chronos.integrity.replayValid`
  * on success or `chronos.integrity.replayMismatch` on failure.
  *
- * @type {import('@plures/praxis').RuleDescriptor}
+ * @type {object}
  * @example
  * ```js
  * import { createChronosEngine } from '@plures/chronos/praxis';
@@ -315,7 +315,7 @@ export const replayValidationRule = defineRule({
 /**
  * Ensures that a causal chain does not contain duplicate node IDs.
  *
- * @type {import('@plures/praxis').ConstraintDescriptor}
+ * @type {object}
  * @example
  * ```js
  * import { createChronosEngine } from '@plures/chronos/praxis';
@@ -357,7 +357,7 @@ export const noDuplicateNodesConstraint = defineConstraint({
  * Bundles the contiguity check, gap detection, and replay validation rules
  * together with the `noDuplicateNodesConstraint`.
  *
- * @type {import('@plures/praxis').PraxisModule}
+ * @type {object}
  * @example
  * ```js
  * import { integrityModule } from '@plures/chronos/rules';

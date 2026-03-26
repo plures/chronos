@@ -64,7 +64,7 @@ export const RETENTION_AUDIT_REQUESTED = 'chronos.retention.auditRequested';
  * the configured TTL.  The caller is responsible for physically removing the
  * nodes identified in the `nodeIds` payload.
  *
- * @type {import('@plures/praxis').RuleDescriptor}
+ * @type {object}
  * @example
  * ```js
  * import { createChronosEngine } from '@plures/chronos/praxis';
@@ -126,7 +126,7 @@ export const agePruningRule = defineRule({
  * When the total node count exceeds `maxNodes`, emits `chronos.retention.pruneEligible`
  * for the oldest non-critical nodes necessary to bring the count back within quota.
  *
- * @type {import('@plures/praxis').RuleDescriptor}
+ * @type {object}
  * @example
  * ```js
  * import { createChronosEngine } from '@plures/chronos/praxis';
@@ -209,7 +209,7 @@ export const quotaEnforcementRule = defineRule({
  * a long-term archival age.  These nodes should be moved to cold storage rather
  * than deleted.
  *
- * @type {import('@plures/praxis').RuleDescriptor}
+ * @type {object}
  * @example
  * ```js
  * import { createChronosEngine } from '@plures/chronos/praxis';
@@ -267,7 +267,7 @@ export const archivalGateRule = defineRule({
 /**
  * Ensures `maxNodes` is a positive integer when set on the context.
  *
- * @type {import('@plures/praxis').ConstraintDescriptor}
+ * @type {object}
  * @example
  * ```js
  * import { createChronosEngine } from '@plures/chronos/praxis';
@@ -305,7 +305,7 @@ export const positiveQuotaConstraint = defineConstraint({
  * Bundles the age pruning, quota enforcement, and archival gate rules
  * together with the `positiveQuotaConstraint`.
  *
- * @type {import('@plures/praxis').PraxisModule}
+ * @type {object}
  * @example
  * ```js
  * import { retentionPolicyModule } from '@plures/chronos/rules';

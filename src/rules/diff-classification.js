@@ -33,7 +33,7 @@ export const DIFF_RECORDED = 'chronos.diff.recorded';
 /**
  * Determines the change type (create / update / delete) from before/after values.
  *
- * @type {import('@plures/praxis').RuleDescriptor}
+ * @type {object}
  * @example
  * ```js
  * import { createChronosEngine } from '@plures/chronos/praxis';
@@ -90,7 +90,7 @@ export const classifyChangeTypeRule = defineRule({
  *  - paths matching `*.critical` or `auth.*` / `security.*` are `critical`
  *  - everything else defaults to `info`
  *
- * @type {import('@plures/praxis').RuleDescriptor}
+ * @type {object}
  * @example
  * ```js
  * import { createChronosEngine } from '@plures/chronos/praxis';
@@ -151,7 +151,7 @@ export const assignSeverityRule = defineRule({
  *  - info severity: base 10
  *  - value size delta (serialised byte difference, capped at +20)
  *
- * @type {import('@plures/praxis').RuleDescriptor}
+ * @type {object}
  * @example
  * ```js
  * import { createChronosEngine } from '@plures/chronos/praxis';
@@ -219,7 +219,7 @@ export const scoreImpactRule = defineRule({
 /**
  * Ensures the `lastClassified` context field always holds a valid change type.
  *
- * @type {import('@plures/praxis').ConstraintDescriptor}
+ * @type {object}
  * @example
  * ```js
  * import { createChronosEngine } from '@plures/chronos/praxis';
@@ -258,7 +258,7 @@ export const validChangeTypeConstraint = defineConstraint({
  * Bundle all diff-classification rules and constraints into a single module
  * that can be registered with a `PraxisRegistry`.
  *
- * @type {import('@plures/praxis').PraxisModule}
+ * @type {object}
  * @example
  * ```js
  * import { diffClassificationModule } from '@plures/chronos/rules';
