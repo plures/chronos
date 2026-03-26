@@ -20,6 +20,16 @@ let nodeCounter = 0;
  * @param {*}      after    - New value (null for deletes)
  * @param {string} [contextId] - Session/request context
  * @returns {ChronicleNode} The newly created chronicle node
+ *
+ * @example
+ * ```js
+ * import { createNode } from '@plures/chronos';
+ *
+ * const node = createNode('todos.1', null, { text: 'buy milk' }, 'session:abc');
+ * console.log(node.id);        // 'chrono:1699000000000-1'
+ * console.log(node.diff);      // { before: null, after: { text: 'buy milk' } }
+ * console.log(node.context);   // 'session:abc'
+ * ```
  */
 export function createNode(path, before, after, contextId) {
   return {
@@ -45,6 +55,19 @@ export function createNode(path, before, after, contextId) {
  * @param {number} [options.maxBatch]  - Max nodes per batch (default: 100)
  * @param {object} [options.writer]    - Persistent writer (from createPersistentWriter)
  * @returns {object} ChronosInstance with start, stop, flush, trace, range, subgraph, history, stats
+ *
+ * @example
+ * ```js
+ * import { createChronos } from '@plures/chronos';
+ *
+ * const chronicle = createChronos(db, { contextId: 'session:abc' });
+ *
+ * // Query history
+ * const history = chronicle.history('todos.1');
+ * // → [{ id, timestamp, path, diff: { before: null, after: { text: 'buy milk' } }, ... }]
+ *
+ * chronicle.stop();
+ * ```
  */
 export function createChronos(db, options = {}) {
   const { contextId = null, batchMs = 50, maxBatch = 100, writer = null } = options;

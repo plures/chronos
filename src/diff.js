@@ -27,6 +27,27 @@
  * @param {*} before - Previous value
  * @param {*} after  - New value
  * @returns {DiffDescriptor|null} Diff descriptor, or null if identical
+ *
+ * @example
+ * ```js
+ * import { computeDiff } from '@plures/chronos/diff';
+ *
+ * // Create
+ * computeDiff(null, { text: 'hello' });
+ * // → { op: 'create', value: { text: 'hello' } }
+ *
+ * // Delete
+ * computeDiff({ text: 'hello' }, null);
+ * // → { op: 'delete', from: { text: 'hello' } }
+ *
+ * // Patch (object field change)
+ * computeDiff({ text: 'hello' }, { text: 'world' });
+ * // → { op: 'patch', changes: { text: { op: 'replace', from: 'hello', value: 'world' } } }
+ *
+ * // Identical values
+ * computeDiff(42, 42);
+ * // → null
+ * ```
  */
 export function computeDiff(before, after) {
   // Fast-path: strict equality (covers same primitives, same reference)

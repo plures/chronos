@@ -43,6 +43,28 @@
  * @param {number}   [options.startMs]   - Lower timestamp bound (inclusive).
  * @param {number}   [options.endMs]     - Upper timestamp bound (inclusive).
  * @returns {TimeTravelDebugger}
+ *
+ * @example
+ * ```js
+ * import { createTimeTravelDebugger } from '@plures/chronos/time-travel';
+ *
+ * const dbg = createTimeTravelDebugger(chronicle._nodes, {
+ *   path: 'todos.1',          // optional: limit to one path
+ * });
+ *
+ * console.log(dbg.length);    // total steps in timeline
+ *
+ * dbg.stepForward();          // advance to first recorded change
+ * console.log(dbg.current()); // ChronicleNode at cursor
+ * console.log(dbg.snapshot()); // { 'todos.1': { text: 'buy milk' }, ... }
+ *
+ * dbg.seek(0);                // jump to a specific index
+ * dbg.stepBackward();         // rewind one step
+ *
+ * for (const node of dbg.replay()) {
+ *   console.log(node.path, node.diff.after);
+ * }
+ * ```
  */
 export function createTimeTravelDebugger(nodes, {
   path,
