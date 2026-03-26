@@ -247,4 +247,43 @@ describe('createChronos', () => {
   it('subgraph returns empty array for unknown context', () => {
     expect(chronos.subgraph('nonexistent')).toEqual([]);
   });
+
+  it('uses root as default path when db emits without a key', async () => {
+    // Emitting without a key argument → key is undefined → path defaults to 'root'
+    db.emit({ val: 1 });
+    await new Promise((r) => setTimeout(r, 10));
+    chronos.flush();
+
+    expect(chronos.stats().nodes).toBe(1);
+    expect(chronos._nodes[0].path).toBe('root');
+  });
+
+  it('trace respects maxDepth and stops at the limit', async () => {
+    // Build a 4-node causal chain: a → b → c → d
+    db.emit('a', 'n1');
+    await new Promise((r) => setTimeout(r, 5));
+    chronos.flush();
+    const idA = chronos._nodes[0].id;
+
+    withCause(idA, () => { db.emit('b', 'n2'); });
+    await new Promise((r) => setTimeout(r, 5));
+    chronos.flush();
+    const idB = chronos._nodes[1].id;
+
+    withCause(idB, () => { db.emit('c', 'n3'); });
+    await new Promise((r) => setTimeout(r, 5));
+    chronos.flush();
+    const idC = chronos._nodes[2].id;
+
+    withCause(idC, () => { db.emit('d', 'n4'); });
+    await new Promise((r) => setTimeout(r, 5));
+    chronos.flush();
+    const idD = chronos._nodes[3].id;
+
+    // maxDepth: 1 should only reach d and c (depth 0 and 1)
+    const chain = chronos.trace(idD, { direction: 'backward', maxDepth: 1 });
+    expect(chain.length).toBe(2);
+    expect(chain[0].path).toBe('n4');
+    expect(chain[1].path).toBe('n3');
+  });
 });

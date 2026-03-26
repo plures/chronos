@@ -73,6 +73,23 @@ describe('createPersistentWriter', () => {
     expect(result[0].id).toBe('b');
   });
 
+  it('queryRange returns multiple nodes sorted by timestamp', () => {
+    // Insert in reverse order to exercise the sort in queryRange
+    writer.writeBatch(
+      [
+        { id: 'c', timestamp: 300, path: 'x', diff: {} },
+        { id: 'a', timestamp: 100, path: 'x', diff: {} },
+        { id: 'b', timestamp: 200, path: 'x', diff: {} },
+      ],
+      []
+    );
+    const result = writer.queryRange(50, 350);
+    expect(result.length).toBe(3);
+    expect(result[0].id).toBe('a');
+    expect(result[1].id).toBe('b');
+    expect(result[2].id).toBe('c');
+  });
+
   it('queryEdges returns edges for a node', () => {
     writer.writeBatch([], [
       { from: 'a', to: 'b', type: 'causes', timestamp: 100 },
