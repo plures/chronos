@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "check": "deno check --unstable src/index.js",
+    "check": "npm run typecheck",
     "fmt:check": "deno fmt --check src/",
     "lint": "deno lint src/",
     "test": "npm run test:run"
