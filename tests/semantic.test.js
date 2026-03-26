@@ -145,6 +145,27 @@ describe('createSemanticIndex', () => {
     expect(chain.length).toBeGreaterThanOrEqual(1);
   });
 
+  it('searchAndTrace walks backward through parent nodes', async () => {
+    // Write both nodes and the causal edge to the persistent store
+    writer.writeBatch([
+      { id: 'parent1', timestamp: 100, path: 'other.branch', diff: { before: null, after: 'trigger' } },
+      { id: 'child1', timestamp: 200, path: 'target.path', diff: { before: null, after: 'result' } },
+    ], [
+      { from: 'parent1', to: 'child1', type: 'causes', timestamp: 200 },
+    ]);
+
+    // Only index child1 so it is always the sole (top-ranked) search result
+    await index.indexNode({
+      id: 'child1', timestamp: 200, path: 'target.path', diff: { before: null, after: 'result' },
+    });
+
+    const results = await index.searchAndTrace('target result', { topK: 1, minScore: 0, traceDepth: 5 });
+    expect(results.length).toBe(1);
+    // The chain must contain both child1 and its parent (covers the queue.push path at line 205)
+    expect(results[0].chain.length).toBe(2);
+    expect(results[0].chain.some((n) => n.id === 'parent1')).toBe(true);
+  });
+
   it('indexNode adds a single node', async () => {
     await index.indexNode({
       id: 'solo', timestamp: 1000, path: 'test',

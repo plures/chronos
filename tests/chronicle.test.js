@@ -30,6 +30,12 @@ describe('computeDiff', () => {
     expect(computeDiff(null, null)).toBeNull();
   });
 
+  it('returns null when both before and after normalize to null', () => {
+    // null !== undefined so the fast-path is bypassed; both normalize to null
+    expect(computeDiff(null, undefined)).toBeNull();
+    expect(computeDiff(undefined, null)).toBeNull();
+  });
+
   it('returns null for structurally identical objects', () => {
     expect(computeDiff({ a: 1 }, { a: 1 })).toBeNull();
     expect(computeDiff([1, 2, 3], [1, 2, 3])).toBeNull();
@@ -265,6 +271,28 @@ describe('createChronicle', () => {
     expect(chronicle.range(t0, Date.now()).length).toBe(2);
     expect(chronicle.range(t1, Date.now()).length).toBe(1);
     expect(chronicle.range(t1, Date.now())[0].diff.after).toBe('y');
+  });
+
+  it('subgraph returns all nodes belonging to a context', async () => {
+    const ctxDb = createMockDb();
+    const ctxChronicle = createChronicle(ctxDb, { batchMs: 0, contextId: 'req:77' });
+
+    ctxDb.emit('v1', 'p1');
+    ctxDb.emit('v2', 'p2');
+    await new Promise((r) => setTimeout(r, 10));
+    ctxChronicle.flush();
+
+    const nodes = ctxChronicle.subgraph('req:77');
+    expect(nodes.length).toBe(2);
+    ctxChronicle.stop();
+  });
+
+  it('subgraph returns empty array for unknown context', async () => {
+    db.emit('v', 'p');
+    await new Promise((r) => setTimeout(r, 10));
+    chronicle.flush();
+
+    expect(chronicle.subgraph('nonexistent')).toEqual([]);
   });
 
   it('trace walks backward through causal chain', async () => {

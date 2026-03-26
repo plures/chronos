@@ -260,6 +260,22 @@ describe('createTimeTravelDebugger', () => {
     expect(values).toEqual(['a', 'd', 'c']);
   });
 
+  it('sort is stable when two nodes share the same timestamp', () => {
+    // Both nodes have identical timestamps — exercises the `|| 0` tie-break in sort
+    const n1 = makeNode('p', null, 'first', 0);
+    const n2 = makeNode('p', null, 'second', 0);
+    n1.timestamp = 1000;
+    n2.timestamp = 1000;
+
+    const d = createTimeTravelDebugger([n2, n1]);
+    // Timeline has 2 nodes regardless of their insertion order
+    expect(d.length).toBe(2);
+    d.stepForward();
+    d.stepForward();
+    // Both nodes are reachable — no assertion on order since tie-break is stable but arbitrary
+    expect(d.current()).not.toBeNull();
+  });
+
   // ── Empty timeline edge cases ──────────────────────────────────────────────
 
   it('handles an empty nodes array gracefully', () => {

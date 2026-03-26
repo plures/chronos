@@ -230,6 +230,13 @@ describe('diff-classification module', () => {
       const facts = factsOf(result, 'chronos.diff.impactScore');
       expect(facts[0].payload.score).toBeLessThanOrEqual(100);
     });
+
+    it('skips when no DIFF_RECORDED event is in the batch', () => {
+      const engine = makeEngine(diffClassificationModule);
+      // Step with an unrelated event tag — scoreImpactRule should skip
+      const result = engine.step([{ tag: 'other.event', payload: {} }]);
+      expect(factsOf(result, 'chronos.diff.impactScore')).toHaveLength(0);
+    });
   });
 
   describe('validChangeTypeConstraint', () => {
@@ -301,6 +308,12 @@ describe('retention-policy module', () => {
       // skip — no pruneEligible emitted
       expect(factsOf(result, 'chronos.retention.pruneEligible')).toHaveLength(0);
     });
+
+    it('emits noop when nodes array is empty', () => {
+      const engine = makeEngine(retentionPolicyModule);
+      const result = stepWith(engine, RETENTION_AUDIT_REQUESTED, { nodes: [], nowMs });
+      expect(factsOf(result, 'chronos.retention.pruneEligible')).toHaveLength(0);
+    });
   });
 
   describe('quotaEnforcementRule', () => {
@@ -343,6 +356,19 @@ describe('retention-policy module', () => {
       expect(quotaExceeded).toHaveLength(1);
       expect(quotaExceeded[0].payload.remainingExcess).toBe(4);
     });
+
+    it('emits noop when all nodes are critical and quota is exceeded', () => {
+      const engine = makeEngine(retentionPolicyModule);
+      // All nodes are critical — nothing can be pruned
+      const nodes = Array.from({ length: 6 }, (_, i) => ({
+        id: `crit${i}`,
+        timestamp: nowMs + i,
+        isCritical: true,
+      }));
+      const result = stepWith(engine, RETENTION_AUDIT_REQUESTED, { nodes, maxNodes: 3, nowMs });
+      // toPrune is empty → noop path at line 120
+      expect(factsOf(result, 'chronos.retention.pruneEligible')).toHaveLength(0);
+    });
   });
 
   describe('archivalGateRule', () => {
@@ -361,6 +387,12 @@ describe('retention-policy module', () => {
       const facts = factsOf(result, 'chronos.retention.archiveRequired');
       expect(facts[0].payload.nodeIds).toContain('crit1');
       expect(facts[0].payload.nodeIds).not.toContain('crit2');
+    });
+
+    it('emits noop when nodes array is empty', () => {
+      const engine = makeEngine(retentionPolicyModule);
+      const result = stepWith(engine, RETENTION_AUDIT_REQUESTED, { nodes: [], nowMs });
+      expect(factsOf(result, 'chronos.retention.archiveRequired')).toHaveLength(0);
     });
   });
 
@@ -497,6 +529,24 @@ describe('alerting module', () => {
       });
       expect(factsOf(result, 'chronos.alert.criticalSpike')).toHaveLength(0);
     });
+
+    it('emits noop when recentNodes array is empty', () => {
+      const engine = makeEngine(alertingModule);
+      const result = stepWith(engine, ALERT_EVALUATION_REQUESTED, {
+        recentNodes: [],
+        criticalRatioThreshold: 0.5,
+      });
+      expect(factsOf(result, 'chronos.alert.criticalSpike')).toHaveLength(0);
+    });
+
+    it('skips when criticalRatioThreshold is non-finite (NaN)', () => {
+      const engine = makeEngine(alertingModule);
+      const result = stepWith(engine, ALERT_EVALUATION_REQUESTED, {
+        recentNodes: [{ severity: 'critical' }],
+        criticalRatioThreshold: NaN,
+      });
+      expect(factsOf(result, 'chronos.alert.criticalSpike')).toHaveLength(0);
+    });
   });
 
   describe('impactAnomalyRule', () => {
@@ -562,6 +612,16 @@ describe('alerting module', () => {
       // Zero variance after filtering — noop, no anomaly
       expect(factsOf(result, 'chronos.alert.impactAnomaly')).toHaveLength(0);
     });
+
+    it('emits noop when recentNodes is not an array', () => {
+      const engine = makeEngine(alertingModule);
+      const result = stepWith(engine, ALERT_EVALUATION_REQUESTED, {
+        recentNodes: null,
+        latestNode: { id: 'latest', impactScore: 90 },
+        anomalyZThreshold: 2.5,
+      });
+      expect(factsOf(result, 'chronos.alert.impactAnomaly')).toHaveLength(0);
+    });
   });
 
   describe('positiveBurstThresholdConstraint', () => {
@@ -623,6 +683,13 @@ describe('integrity module', () => {
         edges: [],
       });
       expect(factsOf(result, 'chronos.integrity.contiguous')).toHaveLength(1);
+    });
+
+    it('emits noop for an empty chain', () => {
+      const engine = makeEngine(integrityModule);
+      const result = stepWith(engine, INTEGRITY_CHECK_REQUESTED, { chain: [], edges: [] });
+      expect(factsOf(result, 'chronos.integrity.contiguous')).toHaveLength(0);
+      expect(factsOf(result, 'chronos.integrity.gap')).toHaveLength(0);
     });
   });
 
@@ -718,6 +785,17 @@ describe('integrity module', () => {
         initialState: {},
       });
       expect(factsOf(result, 'chronos.integrity.replayValid')).toHaveLength(1);
+      expect(factsOf(result, 'chronos.integrity.replayMismatch')).toHaveLength(0);
+    });
+
+    it('emits noop when nodes array is empty', () => {
+      const engine = makeEngine(integrityModule);
+      const result = stepWith(engine, REPLAY_VALIDATION_REQUESTED, {
+        nodes: [],
+        expectedChecksum: 0,
+        initialState: {},
+      });
+      expect(factsOf(result, 'chronos.integrity.replayValid')).toHaveLength(0);
       expect(factsOf(result, 'chronos.integrity.replayMismatch')).toHaveLength(0);
     });
   });
