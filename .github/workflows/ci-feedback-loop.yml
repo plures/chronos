@@ -10,6 +10,12 @@ on:
   # Also monitor PR branches for feedback (but don't block merge)
   pull_request:
     types: [opened, synchronize]
+  # Allow manual triggering to force a CI run
+  workflow_dispatch:
+
+concurrency:
+  group: ci-feedback-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
