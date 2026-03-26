@@ -3,7 +3,7 @@
     "check": "npm run typecheck",
     "fmt:check": "deno fmt --check src/",
     "lint": "deno lint src/",
-    "test": "npm run test:run"
+    "test": "npm run test:coverage"
   },
   "lint": {
     "include": ["src/"]
