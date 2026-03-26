@@ -108,6 +108,7 @@ export function createPersistentWriter(db, options = {}) {
    * @param {string} nodeId
    * @param {'backward'|'forward'} direction
    * @param {number} [maxDepth=10]
+   * @returns {object[]} Ordered list of ChronicleNodes from starting node to root cause (or effects)
    */
   function trace(nodeId, { direction = 'backward', maxDepth = 10 } = {}) {
     const result = [];

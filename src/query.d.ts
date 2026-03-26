@@ -15,6 +15,7 @@ import type { ChronicleNode, ChronicleEdge } from './chronicle.js';
  * @param nodes   - Array of ChronicleNode objects to search
  * @param startMs - Start of range (Unix ms, inclusive)
  * @param endMs   - End of range (Unix ms, inclusive)
+ * @returns ChronicleNodes sorted by timestamp ascending
  */
 export declare function queryByTimeRange(
   nodes: ChronicleNode[],
@@ -27,6 +28,7 @@ export declare function queryByTimeRange(
  *
  * @param nodes - Array of ChronicleNode objects to search
  * @param path  - Exact PluresDB path to match (e.g. `'todos.abc'`)
+ * @returns ChronicleNodes sorted by timestamp ascending
  */
 export declare function queryByPath(nodes: ChronicleNode[], path: string): ChronicleNode[];
 
@@ -36,6 +38,7 @@ export declare function queryByPath(nodes: ChronicleNode[], path: string): Chron
  *
  * @param nodes  - Array of ChronicleNode objects to search
  * @param prefix - Path prefix
+ * @returns ChronicleNodes sorted by timestamp ascending
  */
 export declare function queryByPathPrefix(
   nodes: ChronicleNode[],
@@ -49,6 +52,7 @@ export declare function queryByPathPrefix(
  * @param nodes     - Array of ChronicleNode objects to search
  * @param edges     - Array of ChronicleEdge objects to check context membership
  * @param contextId - Session / request context ID
+ * @returns ChronicleNodes sorted by timestamp ascending
  */
 export declare function queryByContext(
   nodes: ChronicleNode[],

@@ -13,13 +13,37 @@ import { defineRule, defineConstraint, defineModule, RuleResult } from '@plures/
 
 // ── Events ─────────────────────────────────────────────────────────────────
 
-/** Event tag emitted by Chronos whenever a new ChronicleNode is recorded. */
+/**
+ * Event tag emitted by Chronos whenever a new ChronicleNode is recorded.
+ *
+ * @type {string}
+ * @example
+ * ```js
+ * import { DIFF_RECORDED } from '@plures/chronos/rules';
+ * engine.step([{
+ *   tag: DIFF_RECORDED,
+ *   payload: { nodeId: 'n1', path: 'todos.1', before: null, after: { text: 'buy milk' } },
+ * }]);
+ * ```
+ */
 export const DIFF_RECORDED = 'chronos.diff.recorded';
 
 // ── Rules ──────────────────────────────────────────────────────────────────
 
 /**
  * Determines the change type (create / update / delete) from before/after values.
+ *
+ * @type {import('@plures/praxis').RuleDescriptor}
+ * @example
+ * ```js
+ * import { createChronosEngine } from '@plures/chronos/praxis';
+ * const engine = createChronosEngine();
+ * const result = engine.step([{
+ *   tag: 'chronos.diff.recorded',
+ *   payload: { nodeId: 'n1', path: 'todos.1', before: null, after: { text: 'buy milk' } },
+ * }]);
+ * // result.state.facts contains { tag: 'chronos.diff.classified', payload: { changeType: 'create' } }
+ * ```
  */
 export const classifyChangeTypeRule = defineRule({
   id: 'chronos.diff.classifyChangeType',
@@ -65,6 +89,18 @@ export const classifyChangeTypeRule = defineRule({
  *  - deletes are always at least `warning`
  *  - paths matching `*.critical` or `auth.*` / `security.*` are `critical`
  *  - everything else defaults to `info`
+ *
+ * @type {import('@plures/praxis').RuleDescriptor}
+ * @example
+ * ```js
+ * import { createChronosEngine } from '@plures/chronos/praxis';
+ * const engine = createChronosEngine();
+ * const result = engine.step([{
+ *   tag: 'chronos.diff.recorded',
+ *   payload: { nodeId: 'n1', path: 'auth.session', before: 'token123', after: null },
+ * }]);
+ * // result.state.facts contains { tag: 'chronos.diff.severity', payload: { severity: 'critical' } }
+ * ```
  */
 export const assignSeverityRule = defineRule({
   id: 'chronos.diff.assignSeverity',
@@ -114,6 +150,18 @@ export const assignSeverityRule = defineRule({
  *  - warning severity: base 50
  *  - info severity: base 10
  *  - value size delta (serialised byte difference, capped at +20)
+ *
+ * @type {import('@plures/praxis').RuleDescriptor}
+ * @example
+ * ```js
+ * import { createChronosEngine } from '@plures/chronos/praxis';
+ * const engine = createChronosEngine();
+ * const result = engine.step([{
+ *   tag: 'chronos.diff.recorded',
+ *   payload: { nodeId: 'n1', path: 'todos.1', before: null, after: { text: 'buy milk' } },
+ * }]);
+ * // result.state.facts contains { tag: 'chronos.diff.impactScore', payload: { score: 10 } }
+ * ```
  */
 export const scoreImpactRule = defineRule({
   id: 'chronos.diff.scoreImpact',
@@ -170,6 +218,14 @@ export const scoreImpactRule = defineRule({
 
 /**
  * Ensures the `lastClassified` context field always holds a valid change type.
+ *
+ * @type {import('@plures/praxis').ConstraintDescriptor}
+ * @example
+ * ```js
+ * import { createChronosEngine } from '@plures/chronos/praxis';
+ * const engine = createChronosEngine({ initialContext: { lastClassified: { changeType: 'create' } } });
+ * // engine.checkConstraints() will pass for valid change types
+ * ```
  */
 export const validChangeTypeConstraint = defineConstraint({
   id: 'chronos.diff.validChangeType',
@@ -202,6 +258,7 @@ export const validChangeTypeConstraint = defineConstraint({
  * Bundle all diff-classification rules and constraints into a single module
  * that can be registered with a `PraxisRegistry`.
  *
+ * @type {import('@plures/praxis').PraxisModule}
  * @example
  * ```js
  * import { diffClassificationModule } from '@plures/chronos/rules';
