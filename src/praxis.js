@@ -93,8 +93,63 @@ export function createChronosEngine(options = {}) {
 }
 
 // Re-export all rule modules and event tag constants for convenience
+/**
+ * Praxis module bundling all diff-classification rules and constraints.
+ *
+ * Re-exported from `@plures/chronos/rules` for convenience.
+ *
+ * @type {object}
+ *
+ * @example
+ * ```js
+ * import { diffClassificationModule } from '@plures/chronos/praxis';
+ * registry.registerModule(diffClassificationModule);
+ * ```
+ */
 export { diffClassificationModule } from './rules/diff-classification.js';
+
+/**
+ * Praxis module bundling all retention-policy rules and constraints.
+ *
+ * Re-exported from `@plures/chronos/rules` for convenience.
+ *
+ * @type {object}
+ *
+ * @example
+ * ```js
+ * import { retentionPolicyModule } from '@plures/chronos/praxis';
+ * registry.registerModule(retentionPolicyModule);
+ * ```
+ */
 export { retentionPolicyModule } from './rules/retention-policy.js';
+
+/**
+ * Praxis module bundling all alerting rules and constraints.
+ *
+ * Re-exported from `@plures/chronos/rules` for convenience.
+ *
+ * @type {object}
+ *
+ * @example
+ * ```js
+ * import { alertingModule } from '@plures/chronos/praxis';
+ * registry.registerModule(alertingModule);
+ * ```
+ */
 export { alertingModule } from './rules/alerting.js';
+
+/**
+ * Praxis module bundling all integrity rules and constraints.
+ *
+ * Re-exported from `@plures/chronos/rules` for convenience.
+ *
+ * @type {object}
+ *
+ * @example
+ * ```js
+ * import { integrityModule } from '@plures/chronos/praxis';
+ * registry.registerModule(integrityModule);
+ * ```
+ */
 export { integrityModule } from './rules/integrity.js';
 export * from './rules/index.js';

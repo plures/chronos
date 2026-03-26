@@ -269,4 +269,39 @@ export function createChronos(db, options = {}) {
   };
 }
 
-export { withCause, currentCause };
+/**
+ * Run a function within a causal context so that all nodes created during
+ * execution carry `causeId` as their causal parent.
+ *
+ * Re-exported from `@plures/chronos/causal` for convenience.
+ *
+ * @param {string}   causeId - ID of the parent node to set as the active cause
+ * @param {Function} fn      - Synchronous or async function to execute inside the scope
+ * @returns {*} The return value of `fn`
+ *
+ * @example
+ * ```js
+ * import { withCause } from '@plures/chronos';
+ *
+ * withCause('chrono:1699000000000-1', () => {
+ *   // All nodes created here carry the causeId
+ * });
+ * ```
+ */
+export { withCause };
+
+/**
+ * Get the current causal parent ID.
+ *
+ * Re-exported from `@plures/chronos/causal` for convenience.
+ *
+ * @returns {string|null} The active causal parent ID, or `null` outside a causal scope.
+ *
+ * @example
+ * ```js
+ * import { currentCause } from '@plures/chronos';
+ *
+ * console.log(currentCause()); // null (outside any causal scope)
+ * ```
+ */
+export { currentCause };
