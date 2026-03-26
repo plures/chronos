@@ -734,7 +734,7 @@ import {
 
   // Integrity
   integrityModule, INTEGRITY_CHECK_REQUESTED, REPLAY_VALIDATION_REQUESTED,
-  contiguityCheckRule, gapDetectionRule, replayValidationRule, contiguousChainConstraint,
+  contiguityCheckRule, gapDetectionRule, replayValidationRule, noDuplicateNodesConstraint,
 } from '@plures/chronos/rules';
 ```
 
@@ -789,7 +789,7 @@ of registering the entire barrel when only a subset is needed.
 | `contiguityCheckRule` | Rule | Verifies no gaps in a causal chain |
 | `gapDetectionRule` | Rule | Detects missing causal edges |
 | `replayValidationRule` | Rule | Validates replay checksum matches expected |
-| `contiguousChainConstraint` | Constraint | Enforces contiguous causal chain invariant |
+| `noDuplicateNodesConstraint` | Constraint | Prevents duplicate node IDs within a causal chain |
 | `integrityModule` | Module | Bundles all of the above |
 
 ---

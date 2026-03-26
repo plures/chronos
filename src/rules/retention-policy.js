@@ -14,15 +14,45 @@ import { defineRule, defineConstraint, defineModule, RuleResult } from '@plures/
 
 // ── Defaults ───────────────────────────────────────────────────────────────
 
-/** Default maximum age in milliseconds before a node is eligible for pruning (7 days). */
+/**
+ * Default maximum age in milliseconds before a node is eligible for pruning (7 days).
+ *
+ * @type {number}
+ * @example
+ * ```js
+ * import { DEFAULT_TTL_MS } from '@plures/chronos/rules';
+ * engine.step([{ tag: 'chronos.retention.auditRequested', payload: { nodes, ttlMs: DEFAULT_TTL_MS } }]);
+ * ```
+ */
 export const DEFAULT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-/** Default maximum number of nodes to retain in memory / persistent store. */
+/**
+ * Default maximum number of nodes to retain in memory / persistent store.
+ *
+ * @type {number}
+ * @example
+ * ```js
+ * import { DEFAULT_MAX_NODES } from '@plures/chronos/rules';
+ * engine.step([{ tag: 'chronos.retention.auditRequested', payload: { nodes, maxNodes: DEFAULT_MAX_NODES } }]);
+ * ```
+ */
 export const DEFAULT_MAX_NODES = 10_000;
 
 // ── Events ─────────────────────────────────────────────────────────────────
 
-/** Event tag emitted when a retention audit is requested. */
+/**
+ * Event tag emitted when a retention audit is requested.
+ *
+ * @type {string}
+ * @example
+ * ```js
+ * import { RETENTION_AUDIT_REQUESTED } from '@plures/chronos/rules';
+ * engine.step([{
+ *   tag: RETENTION_AUDIT_REQUESTED,
+ *   payload: { nodes: chronicle._nodes, ttlMs: 7 * 24 * 60 * 60 * 1000 },
+ * }]);
+ * ```
+ */
 export const RETENTION_AUDIT_REQUESTED = 'chronos.retention.auditRequested';
 
 // ── Rules ──────────────────────────────────────────────────────────────────
@@ -33,6 +63,18 @@ export const RETENTION_AUDIT_REQUESTED = 'chronos.retention.auditRequested';
  * Emits `chronos.retention.pruneEligible` for every node whose age exceeds
  * the configured TTL.  The caller is responsible for physically removing the
  * nodes identified in the `nodeIds` payload.
+ *
+ * @type {object}
+ * @example
+ * ```js
+ * import { createChronosEngine } from '@plures/chronos/praxis';
+ * const engine = createChronosEngine();
+ * const result = engine.step([{
+ *   tag: 'chronos.retention.auditRequested',
+ *   payload: { nodes: chronicle._nodes, ttlMs: 7 * 24 * 60 * 60 * 1000 },
+ * }]);
+ * // result.state.facts may contain { tag: 'chronos.retention.pruneEligible', payload: { reason: 'age', nodeIds: [...] } }
+ * ```
  */
 export const agePruningRule = defineRule({
   id: 'chronos.retention.agePruning',
@@ -83,6 +125,18 @@ export const agePruningRule = defineRule({
  *
  * When the total node count exceeds `maxNodes`, emits `chronos.retention.pruneEligible`
  * for the oldest non-critical nodes necessary to bring the count back within quota.
+ *
+ * @type {object}
+ * @example
+ * ```js
+ * import { createChronosEngine } from '@plures/chronos/praxis';
+ * const engine = createChronosEngine();
+ * const result = engine.step([{
+ *   tag: 'chronos.retention.auditRequested',
+ *   payload: { nodes: chronicle._nodes, maxNodes: 10_000 },
+ * }]);
+ * // result.state.facts may contain { tag: 'chronos.retention.pruneEligible', payload: { reason: 'quota', ... } }
+ * ```
  */
 export const quotaEnforcementRule = defineRule({
   id: 'chronos.retention.quotaEnforcement',
@@ -154,6 +208,18 @@ export const quotaEnforcementRule = defineRule({
  * Emits `chronos.retention.archiveRequired` for critical-path nodes that exceed
  * a long-term archival age.  These nodes should be moved to cold storage rather
  * than deleted.
+ *
+ * @type {object}
+ * @example
+ * ```js
+ * import { createChronosEngine } from '@plures/chronos/praxis';
+ * const engine = createChronosEngine();
+ * const result = engine.step([{
+ *   tag: 'chronos.retention.auditRequested',
+ *   payload: { nodes: chronicle._nodes, archiveAfterMs: 30 * 24 * 60 * 60 * 1000 },
+ * }]);
+ * // result.state.facts may contain { tag: 'chronos.retention.archiveRequired', ... }
+ * ```
  */
 export const archivalGateRule = defineRule({
   id: 'chronos.retention.archivalGate',
@@ -200,6 +266,14 @@ export const archivalGateRule = defineRule({
 
 /**
  * Ensures `maxNodes` is a positive integer when set on the context.
+ *
+ * @type {object}
+ * @example
+ * ```js
+ * import { createChronosEngine } from '@plures/chronos/praxis';
+ * const engine = createChronosEngine({ initialContext: { maxNodes: 10_000 } });
+ * // engine.checkConstraints() will surface violations if maxNodes is zero or negative
+ * ```
  */
 export const positiveQuotaConstraint = defineConstraint({
   id: 'chronos.retention.positiveQuota',
@@ -228,6 +302,10 @@ export const positiveQuotaConstraint = defineConstraint({
 /**
  * Retention Policy PraxisModule.
  *
+ * Bundles the age pruning, quota enforcement, and archival gate rules
+ * together with the `positiveQuotaConstraint`.
+ *
+ * @type {object}
  * @example
  * ```js
  * import { retentionPolicyModule } from '@plures/chronos/rules';

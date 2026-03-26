@@ -13,21 +13,69 @@ import { defineRule, defineConstraint, defineModule, RuleResult } from '@plures/
 
 // ── Defaults ───────────────────────────────────────────────────────────────
 
-/** Default maximum number of diffs allowed within a burst window. */
+/**
+ * Default maximum number of diffs allowed within a burst window.
+ *
+ * @type {number}
+ * @example
+ * ```js
+ * import { DEFAULT_BURST_THRESHOLD } from '@plures/chronos/rules';
+ * const engine = createChronosEngine({ initialContext: { burstThreshold: DEFAULT_BURST_THRESHOLD } });
+ * ```
+ */
 export const DEFAULT_BURST_THRESHOLD = 50;
 
-/** Default rolling window (ms) for burst detection. */
+/**
+ * Default rolling window (ms) for burst detection.
+ *
+ * @type {number}
+ * @example
+ * ```js
+ * import { DEFAULT_BURST_WINDOW_MS } from '@plures/chronos/rules';
+ * // Evaluate within the default 5-second window
+ * engine.step([{ tag: 'chronos.alert.evaluationRequested', payload: { windowMs: DEFAULT_BURST_WINDOW_MS, recentNodes } }]);
+ * ```
+ */
 export const DEFAULT_BURST_WINDOW_MS = 5_000;
 
-/** Default maximum proportion of critical-severity diffs before an alert fires. */
+/**
+ * Default maximum proportion of critical-severity diffs before an alert fires.
+ *
+ * @type {number}
+ * @example
+ * ```js
+ * import { DEFAULT_CRITICAL_RATIO_THRESHOLD } from '@plures/chronos/rules';
+ * // 25% critical diffs triggers the alert by default
+ * console.log(DEFAULT_CRITICAL_RATIO_THRESHOLD); // 0.25
+ * ```
+ */
 export const DEFAULT_CRITICAL_RATIO_THRESHOLD = 0.25;
 
-/** Default Z-score above which an impact score is considered anomalous. */
+/**
+ * Default Z-score above which an impact score is considered anomalous.
+ *
+ * @type {number}
+ * @example
+ * ```js
+ * import { DEFAULT_ANOMALY_Z_THRESHOLD } from '@plures/chronos/rules';
+ * // Impact scores more than 2.5 standard deviations above the mean trigger an alert
+ * console.log(DEFAULT_ANOMALY_Z_THRESHOLD); // 2.5
+ * ```
+ */
 export const DEFAULT_ANOMALY_Z_THRESHOLD = 2.5;
 
 // ── Events ─────────────────────────────────────────────────────────────────
 
-/** Event tag emitted when an alerting evaluation is requested. */
+/**
+ * Event tag emitted when an alerting evaluation is requested.
+ *
+ * @type {string}
+ * @example
+ * ```js
+ * import { ALERT_EVALUATION_REQUESTED } from '@plures/chronos/rules';
+ * engine.step([{ tag: ALERT_EVALUATION_REQUESTED, payload: { recentNodes: chronicle._nodes } }]);
+ * ```
+ */
 export const ALERT_EVALUATION_REQUESTED = 'chronos.alert.evaluationRequested';
 
 // ── Rules ──────────────────────────────────────────────────────────────────
@@ -37,6 +85,18 @@ export const ALERT_EVALUATION_REQUESTED = 'chronos.alert.evaluationRequested';
  *
  * Fires `chronos.alert.burst` when the number of diffs recorded within
  * the rolling window exceeds `burstThreshold`.
+ *
+ * @type {object}
+ * @example
+ * ```js
+ * import { createChronosEngine } from '@plures/chronos/praxis';
+ * const engine = createChronosEngine();
+ * const result = engine.step([{
+ *   tag: 'chronos.alert.evaluationRequested',
+ *   payload: { recentNodes: chronicle._nodes, burstThreshold: 50 },
+ * }]);
+ * // result.state.facts may contain { tag: 'chronos.alert.burst', ... }
+ * ```
  */
 export const burstDetectionRule = defineRule({
   id: 'chronos.alert.burstDetection',
@@ -98,6 +158,18 @@ export const burstDetectionRule = defineRule({
  *
  * Fires `chronos.alert.criticalSpike` when the fraction of critical-severity
  * diffs among recent nodes exceeds `criticalRatioThreshold`.
+ *
+ * @type {object}
+ * @example
+ * ```js
+ * import { createChronosEngine } from '@plures/chronos/praxis';
+ * const engine = createChronosEngine();
+ * const result = engine.step([{
+ *   tag: 'chronos.alert.evaluationRequested',
+ *   payload: { recentNodes: chronicle._nodes, criticalRatioThreshold: 0.25 },
+ * }]);
+ * // result.state.facts may contain { tag: 'chronos.alert.criticalSpike', ... }
+ * ```
  */
 export const criticalSpikeRule = defineRule({
   id: 'chronos.alert.criticalSpike',
@@ -165,6 +237,18 @@ export const criticalSpikeRule = defineRule({
  *
  * Fires `chronos.alert.impactAnomaly` when a diff's impact score is more than
  * `anomalyZThreshold` standard deviations above the rolling mean.
+ *
+ * @type {object}
+ * @example
+ * ```js
+ * import { createChronosEngine } from '@plures/chronos/praxis';
+ * const engine = createChronosEngine();
+ * const result = engine.step([{
+ *   tag: 'chronos.alert.evaluationRequested',
+ *   payload: { recentNodes: chronicle._nodes, latestNode: { id: 'n1', impactScore: 95 } },
+ * }]);
+ * // result.state.facts may contain { tag: 'chronos.alert.impactAnomaly', ... }
+ * ```
  */
 export const impactAnomalyRule = defineRule({
   id: 'chronos.alert.impactAnomaly',
@@ -239,6 +323,15 @@ export const impactAnomalyRule = defineRule({
 
 /**
  * Ensures `burstThreshold` in context is a positive integer when set.
+ *
+ * @type {object}
+ * @example
+ * ```js
+ * import { createChronosEngine } from '@plures/chronos/praxis';
+ * // The constraint is pre-registered inside the engine
+ * const engine = createChronosEngine({ initialContext: { burstThreshold: 50 } });
+ * // Setting an invalid threshold: engine.checkConstraints() will surface a violation
+ * ```
  */
 export const positiveBurstThresholdConstraint = defineConstraint({
   id: 'chronos.alert.positiveBurstThreshold',
@@ -271,6 +364,10 @@ export const positiveBurstThresholdConstraint = defineConstraint({
 /**
  * Alerting PraxisModule.
  *
+ * Bundles the burst detection, critical spike, and impact anomaly rules
+ * together with the `positiveBurstThresholdConstraint`.
+ *
+ * @type {object}
  * @example
  * ```js
  * import { alertingModule } from '@plures/chronos/rules';

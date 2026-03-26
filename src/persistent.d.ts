@@ -48,6 +48,7 @@ export interface PersistentWriter {
    *
    * @param nodeId  - Starting node ID
    * @param options - Traversal options
+   * @returns ChronicleNodes ordered from starting node to root cause (or downstream effects)
    */
   trace(
     nodeId: string,
@@ -58,6 +59,7 @@ export interface PersistentWriter {
    * Get history for a specific path (all state changes over time).
    *
    * @param path - PluresDB path to query
+   * @returns ChronicleNodes sorted by timestamp ascending
    */
   history(path: string): ChronicleNode[];
 

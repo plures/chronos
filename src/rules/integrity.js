@@ -13,10 +13,34 @@ import { defineRule, defineConstraint, defineModule, RuleResult } from '@plures/
 
 // ── Events ─────────────────────────────────────────────────────────────────
 
-/** Event tag emitted when an integrity check is requested on a causal chain. */
+/**
+ * Event tag emitted when an integrity check is requested on a causal chain.
+ *
+ * @type {string}
+ * @example
+ * ```js
+ * import { INTEGRITY_CHECK_REQUESTED } from '@plures/chronos/rules';
+ * engine.step([{
+ *   tag: INTEGRITY_CHECK_REQUESTED,
+ *   payload: { chain: chronicle._nodes, edges: chronicle._edges },
+ * }]);
+ * ```
+ */
 export const INTEGRITY_CHECK_REQUESTED = 'chronos.integrity.checkRequested';
 
-/** Event tag emitted when a replay validation is requested. */
+/**
+ * Event tag emitted when a replay validation is requested.
+ *
+ * @type {string}
+ * @example
+ * ```js
+ * import { REPLAY_VALIDATION_REQUESTED } from '@plures/chronos/rules';
+ * engine.step([{
+ *   tag: REPLAY_VALIDATION_REQUESTED,
+ *   payload: { nodes: chronicle._nodes, expectedChecksum: 0xdeadbeef },
+ * }]);
+ * ```
+ */
 export const REPLAY_VALIDATION_REQUESTED = 'chronos.integrity.replayValidationRequested';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -45,6 +69,18 @@ function simpleHash(value) {
  * Verifies that every node in a causal chain has a corresponding `causes` edge
  * linking it to the previous node.  Emits `chronos.integrity.contiguous` on
  * success or `chronos.integrity.gap` for all missing links found in the chain.
+ *
+ * @type {object}
+ * @example
+ * ```js
+ * import { createChronosEngine } from '@plures/chronos/praxis';
+ * const engine = createChronosEngine();
+ * const result = engine.step([{
+ *   tag: 'chronos.integrity.checkRequested',
+ *   payload: { chain: [nodeA, nodeB, nodeC], edges: chronicle._edges },
+ * }]);
+ * // result.state.facts contains { tag: 'chronos.integrity.contiguous', ... } or integrity.gap
+ * ```
  */
 export const contiguityCheckRule = defineRule({
   id: 'chronos.integrity.contiguityCheck',
@@ -116,6 +152,18 @@ export const contiguityCheckRule = defineRule({
  *
  * Scans a time-ordered list of nodes for temporal gaps larger than a configured
  * threshold.  A temporal gap indicates potentially missing chronicle entries.
+ *
+ * @type {object}
+ * @example
+ * ```js
+ * import { createChronosEngine } from '@plures/chronos/praxis';
+ * const engine = createChronosEngine();
+ * const result = engine.step([{
+ *   tag: 'chronos.integrity.checkRequested',
+ *   payload: { chain: chronicle._nodes, gapThresholdMs: 60_000 },
+ * }]);
+ * // result.state.facts may contain { tag: 'chronos.integrity.temporalGap', ... }
+ * ```
  */
 export const gapDetectionRule = defineRule({
   id: 'chronos.integrity.gapDetection',
@@ -183,6 +231,18 @@ export const gapDetectionRule = defineRule({
  * Verifies that replaying a sequence of diffs produces a final state whose
  * checksum matches the expected value.  Emits `chronos.integrity.replayValid`
  * on success or `chronos.integrity.replayMismatch` on failure.
+ *
+ * @type {object}
+ * @example
+ * ```js
+ * import { createChronosEngine } from '@plures/chronos/praxis';
+ * const engine = createChronosEngine();
+ * const result = engine.step([{
+ *   tag: 'chronos.integrity.replayValidationRequested',
+ *   payload: { nodes: chronicle._nodes, expectedChecksum: 123456789 },
+ * }]);
+ * // result.state.facts contains { tag: 'chronos.integrity.replayValid', ... } or replayMismatch
+ * ```
  */
 export const replayValidationRule = defineRule({
   id: 'chronos.integrity.replayValidation',
@@ -254,6 +314,14 @@ export const replayValidationRule = defineRule({
 
 /**
  * Ensures that a causal chain does not contain duplicate node IDs.
+ *
+ * @type {object}
+ * @example
+ * ```js
+ * import { createChronosEngine } from '@plures/chronos/praxis';
+ * const engine = createChronosEngine({ initialContext: { currentChain: [nodeA, nodeB] } });
+ * // engine.checkConstraints() will surface violations if currentChain has duplicate IDs
+ * ```
  */
 export const noDuplicateNodesConstraint = defineConstraint({
   id: 'chronos.integrity.noDuplicateNodes',
@@ -286,6 +354,10 @@ export const noDuplicateNodesConstraint = defineConstraint({
 /**
  * Integrity PraxisModule.
  *
+ * Bundles the contiguity check, gap detection, and replay validation rules
+ * together with the `noDuplicateNodesConstraint`.
+ *
+ * @type {object}
  * @example
  * ```js
  * import { integrityModule } from '@plures/chronos/rules';
