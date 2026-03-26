@@ -114,7 +114,7 @@ export function createChronicle(db, options = {}) {
 
   const nodes = [];
   const edges = [];
-  let pendingWrite = [];
+  const pendingWrite = [];
   let flushTimer = null;
   let unsubscribe = null;
 
