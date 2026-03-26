@@ -24,6 +24,28 @@
  *   Edge type to follow. Defaults to `'causes'`; pass `'context'` to walk
  *   the session/request subgraph instead.
  * @returns {object[]} Ordered list of ChronicleNodes starting from nodeId.
+ *
+ * @example
+ * ```js
+ * import { traceCausalChain } from '@plures/chronos/trace';
+ *
+ * // Walk backward from a node to find all of its causes
+ * const chain = traceCausalChain(
+ *   chronicle._nodes,
+ *   chronicle._edges,
+ *   'chrono:1699000000000-5',
+ *   { direction: 'backward', maxDepth: 10 },
+ * );
+ * // → [node5, node3, node1] — ordered from starting node to root cause
+ *
+ * // Walk forward to see all downstream effects
+ * const effects = traceCausalChain(
+ *   chronicle._nodes,
+ *   chronicle._edges,
+ *   'chrono:1699000000000-1',
+ *   { direction: 'forward' },
+ * );
+ * ```
  */
 export function traceCausalChain(nodes, edges, nodeId, {
   direction = 'backward',

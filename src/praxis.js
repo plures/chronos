@@ -47,7 +47,28 @@ import { integrityModule } from './rules/integrity.js';
  *
  * @param {object} [options]
  * @param {ChronosContext} [options.initialContext] - Override initial context values
- * @returns {import('@plures/praxis').LogicEngine<ChronosContext>}
+ * @returns {object} Praxis LogicEngine pre-loaded with all Chronos rule modules
+ *
+ * @example
+ * ```js
+ * import { createChronosEngine } from '@plures/chronos/praxis';
+ *
+ * const engine = createChronosEngine();
+ *
+ * // Classify a newly recorded diff
+ * const result = engine.step([{
+ *   tag: 'chronos.diff.recorded',
+ *   payload: {
+ *     nodeId: 'chrono:1',
+ *     path: 'todos.1',
+ *     before: null,
+ *     after: { text: 'hello' },
+ *   },
+ * }]);
+ *
+ * console.log(result.state.facts);
+ * // → [{ tag: 'chronos.diff.classified', payload: { changeType: 'create', ... } }, ...]
+ * ```
  */
 export function createChronosEngine(options = {}) {
   const registry = new PraxisRegistry();

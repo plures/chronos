@@ -1,0 +1,22 @@
+{
+  "source": {
+    "include": ["src"],
+    "includePattern": "\\.js$",
+    "excludePattern": "(node_modules/|docs/)"
+  },
+  "opts": {
+    "recurse": true,
+    "destination": "./docs/jsdoc",
+    "template": "templates/default",
+    "readme": "README.md"
+  },
+  "plugins": ["plugins/markdown"],
+  "tags": {
+    "allowUnknownTags": true,
+    "dictionaries": ["jsdoc", "closure"]
+  },
+  "templates": {
+    "cleverLinks": false,
+    "monospaceLinks": false
+  }
+}

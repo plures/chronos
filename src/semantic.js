@@ -18,6 +18,29 @@
  * @param {string} [options.prefix='chronos:'] - Key prefix for chronicle nodes
  * @param {number} [options.dimensions=384] - Vector dimensions (must match embed output)
  * @returns {object} SemanticIndex with indexNode, indexBatch, indexAll, search, searchAndTrace, stats
+ *
+ * @example
+ * ```js
+ * import { createSemanticIndex } from '@plures/chronos/semantic';
+ *
+ * // Supply an embedding function (e.g. from a local model or API)
+ * const embed = async (text) => myEmbeddingModel.encode(text);
+ *
+ * const index = createSemanticIndex(db, { embed, dimensions: 384 });
+ *
+ * // Index all persisted chronicle nodes
+ * const count = await index.indexAll();
+ * console.log(`Indexed ${count} nodes`);
+ *
+ * // Search by natural language
+ * const results = await index.search('what changed in the user profile?', { topK: 5 });
+ * results.forEach(({ node, score }) => {
+ *   console.log(score.toFixed(3), node.path, node.diff.after);
+ * });
+ *
+ * // Search and trace causal chains for top matches
+ * const traced = await index.searchAndTrace('recent authentication changes', { topK: 3 });
+ * ```
  */
 export function createSemanticIndex(db, options = {}) {
   const { embed, prefix = 'chronos:', dimensions = 384 } = options;

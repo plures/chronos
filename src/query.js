@@ -20,6 +20,14 @@
  * @param {number}   startMs - Start of range (Unix ms, inclusive)
  * @param {number}   endMs   - End of range (Unix ms, inclusive)
  * @returns {object[]} Sorted by timestamp ascending
+ *
+ * @example
+ * ```js
+ * import { queryByTimeRange } from '@plures/chronos/query';
+ *
+ * const oneHourAgo = Date.now() - 3_600_000;
+ * const recentNodes = queryByTimeRange(chronicle._nodes, oneHourAgo, Date.now());
+ * ```
  */
 export function queryByTimeRange(nodes, startMs, endMs) {
   return nodes
@@ -33,6 +41,14 @@ export function queryByTimeRange(nodes, startMs, endMs) {
  * @param {object[]} nodes
  * @param {string}   path  - Exact PluresDB path to match (e.g. `'todos.abc'`)
  * @returns {object[]}
+ *
+ * @example
+ * ```js
+ * import { queryByPath } from '@plures/chronos/query';
+ *
+ * const changes = queryByPath(chronicle._nodes, 'todos.1');
+ * // → All nodes recorded at exactly 'todos.1', sorted chronologically
+ * ```
  */
 export function queryByPath(nodes, path) {
   return nodes
@@ -51,6 +67,17 @@ export function queryByPath(nodes, path) {
  *                            automatically, so `'todos'` also matches `'todosExtra'`).
  *                            Pass `'todos.'` to strictly scope to sub-paths.
  * @returns {object[]} Sorted by timestamp ascending
+ *
+ * @example
+ * ```js
+ * import { queryByPathPrefix } from '@plures/chronos/query';
+ *
+ * // All changes inside the 'todos' subtree
+ * const todoChanges = queryByPathPrefix(chronicle._nodes, 'todos.');
+ *
+ * // Strictly all 'auth' paths (avoids matching 'authentication')
+ * const authChanges = queryByPathPrefix(chronicle._nodes, 'auth.');
+ * ```
  */
 export function queryByPathPrefix(nodes, prefix) {
   return nodes
@@ -69,6 +96,18 @@ export function queryByPathPrefix(nodes, prefix) {
  * @param {object[]} edges
  * @param {string}   contextId
  * @returns {object[]} Sorted by timestamp ascending
+ *
+ * @example
+ * ```js
+ * import { queryByContext } from '@plures/chronos/query';
+ *
+ * const sessionNodes = queryByContext(
+ *   chronicle._nodes,
+ *   chronicle._edges,
+ *   'session:abc',
+ * );
+ * // → All nodes captured during the 'session:abc' context, sorted chronologically
+ * ```
  */
 export function queryByContext(nodes, edges, contextId) {
   const memberIds = new Set(
@@ -102,6 +141,19 @@ export function queryByContext(nodes, edges, contextId) {
  * @param {number}   [options.limit]      - Maximum number of results to return
  * @param {number}   [options.offset]     - Number of results to skip (pagination)
  * @returns {object[]} Sorted by timestamp ascending
+ *
+ * @example
+ * ```js
+ * import { query } from '@plures/chronos/query';
+ *
+ * // Combine multiple filters in one call
+ * const results = query(chronicle._nodes, chronicle._edges, {
+ *   startMs: Date.now() - 3_600_000,  // last hour
+ *   pathPrefix: 'todos.',
+ *   contextId: 'session:abc',
+ *   limit: 20,
+ * });
+ * ```
  */
 export function query(nodes, edges = [], {
   startMs,

@@ -14,6 +14,23 @@
  * @param {object} [options]
  * @param {string} [options.prefix='chronos:'] - Key prefix for chronicle nodes
  * @returns {object} PersistentWriter with writeBatch, queryRange, queryEdges, trace, history, stats
+ *
+ * @example
+ * ```js
+ * import { createPersistentWriter } from '@plures/chronos/persistent';
+ * import { createChronicle } from '@plures/chronos/chronicle';
+ *
+ * const writer = createPersistentWriter(db, { prefix: 'app:chronicle:' });
+ * const chronicle = createChronicle(db, { writer });
+ *
+ * // Nodes and edges are now persisted to PluresDB automatically
+ *
+ * // Query persisted nodes by time range
+ * const recentNodes = writer.queryRange(Date.now() - 3_600_000, Date.now());
+ *
+ * // Check storage stats
+ * console.log(writer.stats()); // { nodes: 42, edges: 18 }
+ * ```
  */
 export function createPersistentWriter(db, options = {}) {
   const { prefix = 'chronos:' } = options;

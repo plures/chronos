@@ -46,6 +46,17 @@ let _nodeCounter = 0;
  * @param {*}      after      - New value (null for deletes)
  * @param {string} [contextId] - Session / request context ID
  * @returns {object} ChronicleNode
+ *
+ * @example
+ * ```js
+ * import { createChronicleNode } from '@plures/chronos/chronicle';
+ *
+ * const node = createChronicleNode('todos.1', null, { text: 'buy milk' }, 'session:abc');
+ * console.log(node.id);        // 'chrono:1699000000000-1'
+ * console.log(node.diff.before); // null
+ * console.log(node.diff.after);  // { text: 'buy milk' }
+ * console.log(node.context);     // 'session:abc'
+ * ```
  */
 export function createChronicleNode(path, before, after, contextId) {
   return {
@@ -78,6 +89,25 @@ export function createChronicleNode(path, before, after, contextId) {
  * @param {object} [options.writer]     - Optional persistent writer
  *                                        (e.g. from `createPersistentWriter`)
  * @returns {object} ChronicleInstance with start, stop, flush, trace, range, subgraph, history, stats
+ *
+ * @example
+ * ```js
+ * import { createChronicle } from '@plures/chronos/chronicle';
+ *
+ * const chronicle = createChronicle(db, {
+ *   contextId: 'session:abc',
+ *   debounceMs: 100,
+ * });
+ *
+ * // Query history for a path
+ * const history = chronicle.history('todos.1');
+ * // → [{ id, timestamp, path, diff: { before: null, after: { text: 'buy milk' } }, ... }]
+ *
+ * // Walk the causal chain
+ * const causes = chronicle.trace(nodeId, { direction: 'backward' });
+ *
+ * chronicle.stop();
+ * ```
  */
 export function createChronicle(db, options = {}) {
   const { contextId = null, debounceMs = 0, maxBatch = 100, writer = null } = options;
