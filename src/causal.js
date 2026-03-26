@@ -15,6 +15,7 @@ function getALS() {
   if (_als) return _als;
   try {
     // Dynamic require to avoid bundler issues
+    // deno-lint-ignore no-undef
     const hooks = globalThis.process?.versions?.node
       ? require('node:async_hooks')
       : null;

@@ -73,7 +73,7 @@ export function createChronos(db, options = {}) {
   const { contextId = null, batchMs = 50, maxBatch = 100, writer = null } = options;
   const nodes = [];
   const edges = [];
-  let pendingWrite = [];
+  const pendingWrite = [];
   let flushTimer = null;
 
   // ── Batch writer ────────────────────────────────────────────────────────
