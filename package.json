@@ -1,6 +1,6 @@
 {
   "name": "@plures/chronos",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Graph-native application state chronicle — zero-effort observability through PluresDB state diffs",
   "type": "module",
   "main": "src/index.js",

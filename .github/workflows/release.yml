@@ -1,14 +1,15 @@
 name: Create Release
 
 # Automatically creates a GitHub release and git tag when the version in
-# package.json is bumped on the main branch.  The release triggers the
-# "Publish to npm" workflow which pushes the package to the npm registry.
+# package.json is bumped on the main branch, then publishes the package to npm.
 #
 # How to cut a new release:
 #   1. Bump `version` in package.json (and update CHANGELOG.md).
 #   2. Merge the PR to main.
-#   3. This workflow detects the version change and creates the GitHub release.
-#   4. The release event triggers publish.yml → npm publish.
+#   3. This workflow detects the version change, creates the GitHub release,
+#      and publishes the package to npm.
+#
+# Note: publish.yml still handles releases created manually from the GitHub UI.
 
 on:
   push:
@@ -23,6 +24,9 @@ jobs:
   release:
     name: Create GitHub release
     runs-on: ubuntu-latest
+    outputs:
+      tag_exists: ${{ steps.tag_check.outputs.exists }}
+      tag: ${{ steps.version.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -49,8 +53,14 @@ jobs:
         if: steps.tag_check.outputs.exists == 'false'
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          # Extract the section for this version from CHANGELOG.md
-          BODY=$(awk "/^## \[${VERSION}\]/,/^## \[/" CHANGELOG.md | head -n -1 | tail -n +2)
+          # Extract the section for this version from CHANGELOG.md.
+          # Use a flag-based approach so the section header itself doesn't
+          # accidentally close the range (range patterns have that pitfall).
+          BODY=$(awk "
+            /^## \[${VERSION}\]/ { found=1; next }
+            found && /^## \[/    { exit }
+            found                { print }
+          " CHANGELOG.md | sed '/^[[:space:]]*$/d' | sed '/^---$/d')
           # Fallback if no changelog entry found
           if [ -z "$BODY" ]; then
             BODY="Release ${VERSION}"
@@ -81,3 +91,32 @@ jobs:
             });
 
             core.info(`Created release ${release.tag_name}: ${release.html_url}`);
+
+  publish:
+    name: npm publish
+    needs: release
+    if: needs.release.outputs.tag_exists == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          registry-url: 'https://registry.npmjs.org/'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Type-check before publish
+        run: npm run typecheck
+
+      - name: Publish package
+        run: npm publish --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
