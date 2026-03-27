@@ -43,7 +43,7 @@
  * ```
  */
 export function createSemanticIndex(db, options = {}) {
-  const { embed, prefix = 'chronos:', dimensions = 384 } = options;
+  const { embed, prefix: _prefix = 'chronos:', dimensions = 384 } = options;
 
   if (typeof embed !== 'function') {
     throw new Error('SemanticIndex requires an embed function: async (text) => number[]');
@@ -145,7 +145,7 @@ export function createSemanticIndex(db, options = {}) {
     const queryVec = await embed(query);
     const results = [];
 
-    for (const [id, entry] of vectors) {
+    for (const [_id, entry] of vectors) {
       // Apply filters
       if (startMs && entry.node.timestamp < startMs) continue;
       if (endMs && entry.node.timestamp > endMs) continue;
