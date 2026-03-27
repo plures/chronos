@@ -102,6 +102,50 @@ describe('createPersistentWriter', () => {
     expect(all.length).toBe(2);
   });
 
+  it('queryEdges filters out non-edge records (nodes) from the store', () => {
+    // Writing both a node and an edge ensures queryEdges encounters node records
+    // and returns false for them (the _type !== chronicle_edge guard path).
+    writer.writeBatch(
+      [{ id: 'a', timestamp: 100, path: 'x', diff: {} }],
+      [{ from: 'a', to: 'b', type: 'causes', timestamp: 100 }]
+    );
+    const edges = writer.queryEdges('a');
+    // Only the edge should be returned, not the node record
+    expect(edges.length).toBe(1);
+    expect(edges[0].from).toBe('a');
+  });
+
+  it('stats counts both nodes and edges from mixed store', () => {
+    writer.writeBatch(
+      [{ id: 'n1', timestamp: 100, path: 'x', diff: {} }],
+      [{ from: 'n1', to: 'n2', type: 'causes', timestamp: 100 }]
+    );
+    const s = writer.stats();
+    expect(s.nodes).toBe(1);
+    expect(s.edges).toBe(1);
+  });
+
+  it('trace indexes causes edges for forward and backward traversal', () => {
+    // Two root→leaf edges — ensures both forward and backward index entries are built
+    writer.writeBatch(
+      [
+        { id: 'root', timestamp: 100, path: 'r', diff: {} },
+        { id: 'leaf', timestamp: 200, path: 'l', diff: {} },
+      ],
+      [
+        { from: 'root', to: 'leaf', type: 'causes', timestamp: 200 },
+        // A second root sharing the same 'to' (leaf) ensures the backward index
+        // append path (edgeIndex.backward.get(to).push(from)) is also exercised
+        // for a key that already exists.
+        { from: 'root', to: 'leaf', type: 'causes', timestamp: 201 },
+      ]
+    );
+    const backward = writer.trace('leaf', { direction: 'backward' });
+    expect(backward.some((n) => n.id === 'root')).toBe(true);
+    const forward = writer.trace('root', { direction: 'forward' });
+    expect(forward.some((n) => n.id === 'leaf')).toBe(true);
+  });
+
   it('trace walks causal chain backward', () => {
     writer.writeBatch(
       [

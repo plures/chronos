@@ -407,4 +407,57 @@ describe('createChronicle', () => {
     // Chronicle overhead per change must stay well under 1 ms
     expect(perChange).toBeLessThan(1);
   });
+
+  // ── Additional coverage tests ──────────────────────────────────────────────
+
+  it('forwards flush writes to an optional persistent writer', async () => {
+    // Build a minimal mock writer to verify that chronicle calls writeBatch.
+    const written = [];
+    const mockWriter = { writeBatch(nodes, edges) { written.push({ nodes, edges }); } };
+
+    const chronicleWithWriter = createChronicle(db, { batchMs: 0, writer: mockWriter });
+    db.emit('value1', 'path1');
+    await new Promise((r) => setTimeout(r, 10));
+    chronicleWithWriter.flush();
+    chronicleWithWriter.stop();
+
+    expect(written.length).toBeGreaterThan(0);
+    expect(written[0].nodes.length).toBe(1);
+  });
+
+  it('start() is idempotent — calling it twice does not double-subscribe', async () => {
+    // createChronicle already calls start() internally.
+    // Calling start() again must not add a second subscription.
+    chronicle.start(); // second call should be a no-op
+
+    db.emit('x', 'key');
+    await new Promise((r) => setTimeout(r, 10));
+    chronicle.flush();
+
+    // If start() subscribed twice we would get 2 nodes instead of 1.
+    expect(chronicle.stats().nodes).toBe(1);
+  });
+
+  it('trace respects maxDepth and stops traversal early', async () => {
+    // Build a 3-node chain: root → mid → leaf
+    db.emit('r', 'a');
+    await new Promise((r) => setTimeout(r, 10));
+    chronicle.flush();
+    const rootId = chronicle._nodes[0].id;
+
+    withCause(rootId, () => db.emit('m', 'b'));
+    await new Promise((r) => setTimeout(r, 10));
+    chronicle.flush();
+    const midId = chronicle._nodes[1].id;
+
+    withCause(midId, () => db.emit('l', 'c'));
+    await new Promise((r) => setTimeout(r, 10));
+    chronicle.flush();
+    const leafId = chronicle._nodes[2].id;
+
+    // With maxDepth=1 the traversal stops after visiting leaf and mid
+    // (root would be at depth 2, which is > maxDepth=1 → continue path triggered)
+    const chain = chronicle.trace(leafId, { direction: 'backward', maxDepth: 1 });
+    expect(chain.length).toBe(2); // leaf + mid, root cut off by maxDepth
+  });
 });
