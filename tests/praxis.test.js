@@ -262,6 +262,16 @@ describe('diff-classification module', () => {
       expect(result).toMatch(/mutation/);
     });
   });
+
+  // Direct impl guard-clause test — covers the "no DIFF_RECORDED event" skip path inside
+  // a multi-line block (line 182) that is unreachable via the engine when eventTypes
+  // pre-filters the batch.
+  describe('rule impl guard clauses (direct call)', () => {
+    it('scoreImpactRule.impl skips when no matching event is passed', () => {
+      const result = scoreImpactRule.impl({}, []);
+      expect(result.kind).toBe('skip');
+    });
+  });
 });
 
 // ── retention-policy ─────────────────────────────────────────────────────────
@@ -413,6 +423,25 @@ describe('retention-policy module', () => {
     it('rejects negatives', () => {
       const result = positiveQuotaConstraint.impl({ context: { maxNodes: -1 } });
       expect(typeof result).toBe('string');
+    });
+  });
+
+  // Direct impl guard-clause test — covers the "no RETENTION_AUDIT_REQUESTED event" skip path
+  // that is unreachable via the engine when eventTypes pre-filters the batch.
+  describe('rule impl guard clauses (direct call)', () => {
+    it('agePruningRule.impl skips when no matching event is passed', () => {
+      const result = agePruningRule.impl({}, []);
+      expect(result.kind).toBe('skip');
+    });
+
+    it('quotaEnforcementRule.impl skips when no matching event is passed', () => {
+      const result = quotaEnforcementRule.impl({}, []);
+      expect(result.kind).toBe('skip');
+    });
+
+    it('archivalGateRule.impl skips when no matching event is passed', () => {
+      const result = archivalGateRule.impl({}, []);
+      expect(result.kind).toBe('skip');
     });
   });
 });
@@ -645,6 +674,25 @@ describe('alerting module', () => {
       expect(typeof result).toBe('string');
     });
   });
+
+  // Direct impl guard-clause tests — cover the "no ALERT_EVALUATION_REQUESTED event" skip paths
+  // that are unreachable via the engine when eventTypes pre-filters the batch.
+  describe('rule impl guard clauses (direct call)', () => {
+    it('burstDetectionRule.impl skips when no matching event is passed', () => {
+      const result = burstDetectionRule.impl({}, []);
+      expect(result.kind).toBe('skip');
+    });
+
+    it('criticalSpikeRule.impl skips when no matching event is passed', () => {
+      const result = criticalSpikeRule.impl({}, []);
+      expect(result.kind).toBe('skip');
+    });
+
+    it('impactAnomalyRule.impl skips when no matching event is passed', () => {
+      const result = impactAnomalyRule.impl({}, []);
+      expect(result.kind).toBe('skip');
+    });
+  });
 });
 
 // ── integrity ──────────────────────────────────────────────────────────────
@@ -818,6 +866,38 @@ describe('integrity module', () => {
 
     it('passes when chain is not set', () => {
       expect(noDuplicateNodesConstraint.impl({ context: {} })).toBe(true);
+    });
+  });
+
+  // Direct impl guard-clause tests — cover the "no matching event" skip paths
+  // and branch paths unreachable via the engine when eventTypes pre-filters the batch.
+  describe('rule impl guard clauses (direct call)', () => {
+    it('gapDetectionRule.impl skips when no matching event is passed', () => {
+      const result = gapDetectionRule.impl({}, []);
+      expect(result.kind).toBe('skip');
+    });
+
+    it('replayValidationRule.impl skips when no matching event is passed', () => {
+      const result = replayValidationRule.impl({}, []);
+      expect(result.kind).toBe('skip');
+    });
+
+    it('replayValidationRule.impl ignores nodes without a diff property', () => {
+      // A node that lacks a diff (or diff.after) should be skipped by the
+      // reconstruction loop (line 278: if (node.diff && node.diff.after !== undefined)).
+      const nodes = [
+        { id: 'n1', path: 'x', timestamp: 1, diff: { after: 1 } },
+        { id: 'n2', path: 'y', timestamp: 2 },           // no diff at all
+        { id: 'n3', path: 'z', timestamp: 3, diff: {} }, // diff without .after
+      ];
+      // Expected reconstructed state only contains x:1 (from n1).
+      const expectedChecksum = simpleHash({ x: 1 });
+      const result = replayValidationRule.impl({}, [{
+        tag: REPLAY_VALIDATION_REQUESTED,
+        payload: { nodes, expectedChecksum, initialState: {} },
+      }]);
+      expect(result.kind).toBe('emit');
+      expect(result.facts[0].tag).toBe('chronos.integrity.replayValid');
     });
   });
 });
