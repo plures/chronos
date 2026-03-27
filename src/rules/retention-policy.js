@@ -92,7 +92,7 @@ export const agePruningRule = defineRule({
       'TTL must be a positive number',
     ],
   },
-  impl: (state, events) => {
+  impl: (_state, events) => {
     const event = events.find((e) => e.tag === RETENTION_AUDIT_REQUESTED);
     if (!event) return RuleResult.skip('No retention audit event in batch');
 
