@@ -56,7 +56,8 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
-    "docs:build": "jsdoc -c jsdoc.json"
+    "docs:build": "jsdoc -c jsdoc.json",
+    "docs:typedoc": "typedoc"
   },
   "repository": {
     "type": "git",
@@ -81,6 +82,7 @@
     "@vitest/coverage-v8": "^4.1.1",
     "jsdoc": "^4.0.5",
     "svelte": "^5.55.0",
+    "typedoc": "^0.28.18",
     "typescript": "^6.0.2",
     "vitest": "^4.1.1"
   },

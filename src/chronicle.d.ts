@@ -7,7 +7,27 @@
 import type { DiffDescriptor } from './diff.js';
 
 export type { DiffDescriptor };
-export { currentCause, withCause } from './causal.js';
+
+/**
+ * Run a function within a causal context so that all nodes created during
+ * execution carry `causeId` as their causal parent.
+ *
+ * Re-exported from `@plures/chronos/causal` for convenience.
+ *
+ * @param causeId - ID of the parent node to set as the active cause
+ * @param fn - Synchronous or async function to execute inside the scope
+ * @returns The return value of `fn`
+ */
+export { withCause } from './causal.js';
+
+/**
+ * Get the current causal parent ID.
+ *
+ * Re-exported from `@plures/chronos/causal` for convenience.
+ *
+ * @returns The active causal parent ID, or `null` when outside a causal scope.
+ */
+export { currentCause } from './causal.js';
 
 /**
  * A single recorded state-change event in the chronicle graph.
