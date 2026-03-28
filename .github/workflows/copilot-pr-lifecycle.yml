@@ -29,17 +29,14 @@ jobs:
 
   queue-advance:
     runs-on: ubuntu-latest
-    # Skip dependabot events entirely: COPILOT_PAT is unavailable for dependabot
-    # branches and this job only processes Copilot-authored PRs anyway.
     if: >-
-      github.actor != 'dependabot[bot]' &&
-      ((github.event.action == 'closed' && github.event.pull_request.merged == true) ||
+      (github.event.action == 'closed' && github.event.pull_request.merged == true) ||
       github.event_name == 'check_suite' ||
       github.event.action == 'synchronize' ||
       github.event.action == 'opened' ||
       github.event.action == 'ready_for_review' ||
       github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'schedule')
+      github.event_name == 'schedule'
     steps:
       - name: Notify QA repo
         if: github.event.action == 'closed' && github.event.pull_request.merged == true
