@@ -1,7 +1,7 @@
 {
   "name": "@plures/chronos",
   "version": "0.1.1",
-  "description": "Graph-native application state chronicle — zero-effort observability through PluresDB state diffs",
+  "description": "Graph-native application state chronicle \u2014 zero-effort observability through PluresDB state diffs",
   "type": "module",
   "main": "src/index.js",
   "types": "src/index.d.ts",
@@ -73,7 +73,7 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "license": "AGPL-3.0-or-later",
+  "license": "BSL-1.1",
   "dependencies": {
     "@plures/praxis": "^2.4.33"
   },
