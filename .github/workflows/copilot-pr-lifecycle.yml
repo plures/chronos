@@ -13,6 +13,6 @@ on:
 
 jobs:
   lifecycle:
-    uses: plures/praxis-business/.github/workflows/copilot-pr-lifecycle-reusable.yml@main
+    uses: plures/repo-template/.github/workflows/copilot-pr-lifecycle-reusable.yml@main
     secrets:
       COPILOT_PAT: ${{ secrets.COPILOT_PAT }}
