@@ -121,7 +121,7 @@ jobs:
               `The violation is tracked here (not as a merge blocker) per process policy.`,
               ``,
               `### Resolution`,
-              `- Assign to Copilot for automated fix: comment \`@copilot fix the ${failures.join(' and ')} failures\``,
+              `- Assign to Copilot for automated fix: comment \```,
               `- Or fix manually`,
               ``,
               `### Decision Ledger`,
