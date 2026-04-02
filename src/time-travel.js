@@ -77,8 +77,12 @@ export function createTimeTravelDebugger(nodes, {
   let timeline = [...nodes];
 
   if (path !== undefined) timeline = timeline.filter((n) => n.path === path);
-  if (startMs !== undefined) timeline = timeline.filter((n) => n.timestamp >= startMs);
-  if (endMs !== undefined) timeline = timeline.filter((n) => n.timestamp <= endMs);
+  if (startMs !== undefined) {
+    timeline = timeline.filter((n) => n.timestamp >= startMs);
+  }
+  if (endMs !== undefined) {
+    timeline = timeline.filter((n) => n.timestamp <= endMs);
+  }
 
   // Stable sort: primary key timestamp ascending, secondary key insertion order
   timeline.sort((a, b) => a.timestamp - b.timestamp || 0);
@@ -121,7 +125,7 @@ export function createTimeTravelDebugger(nodes, {
   function seek(index) {
     if (index < -1 || index >= timeline.length) {
       throw new RangeError(
-        `seek: index ${index} is out of range [-1, ${timeline.length - 1}]`
+        `seek: index ${index} is out of range [-1, ${timeline.length - 1}]`,
       );
     }
     _cursor = index;
@@ -187,13 +191,21 @@ export function createTimeTravelDebugger(nodes, {
 
   return {
     /** Current zero-based cursor index, or `-1` when before the timeline. */
-    get cursor() { return _cursor; },
+    get cursor() {
+      return _cursor;
+    },
     /** Total number of nodes in the filtered timeline. */
-    get length() { return timeline.length; },
+    get length() {
+      return timeline.length;
+    },
     /** Whether `stepForward()` would move the cursor. */
-    get canStepForward() { return _cursor < timeline.length - 1; },
+    get canStepForward() {
+      return _cursor < timeline.length - 1;
+    },
     /** Whether `stepBackward()` would move the cursor. */
-    get canStepBackward() { return _cursor >= 0; },
+    get canStepBackward() {
+      return _cursor >= 0;
+    },
 
     stepForward,
     stepBackward,

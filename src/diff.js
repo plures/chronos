@@ -60,22 +60,22 @@ export function computeDiff(before, after) {
   if (b === null && a === null) return null;
 
   // Create
-  if (b === null) return { op: 'create', value: a };
+  if (b === null) return { op: "create", value: a };
 
   // Delete
-  if (a === null) return { op: 'delete', from: b };
+  if (a === null) return { op: "delete", from: b };
 
-  const bType = Array.isArray(b) ? 'array' : typeof b;
-  const aType = Array.isArray(a) ? 'array' : typeof a;
+  const bType = Array.isArray(b) ? "array" : typeof b;
+  const aType = Array.isArray(a) ? "array" : typeof a;
 
   // Type change — always a full replacement
-  if (bType !== aType) return { op: 'replace', from: b, value: a };
+  if (bType !== aType) return { op: "replace", from: b, value: a };
 
-  if (bType === 'object') return _diffObjects(b, a);
-  if (bType === 'array') return _diffArrays(b, a);
+  if (bType === "object") return _diffObjects(b, a);
+  if (bType === "array") return _diffArrays(b, a);
 
   // Primitive (number, string, boolean, bigint, symbol)
-  return b === a ? null : { op: 'replace', from: b, value: a };
+  return b === a ? null : { op: "replace", from: b, value: a };
 }
 
 /**
@@ -91,7 +91,7 @@ function _diffObjects(b, a) {
     if (d !== null) changes[key] = d;
   }
 
-  return Object.keys(changes).length > 0 ? { op: 'patch', changes } : null;
+  return Object.keys(changes).length > 0 ? { op: "patch", changes } : null;
 }
 
 /**
@@ -100,7 +100,7 @@ function _diffObjects(b, a) {
  * @private
  */
 function _diffArrays(b, a) {
-  if (b.length !== a.length) return { op: 'replace', from: b, value: a };
+  if (b.length !== a.length) return { op: "replace", from: b, value: a };
 
   const changes = {};
   let hasChanges = false;
@@ -113,5 +113,5 @@ function _diffArrays(b, a) {
     }
   }
 
-  return hasChanges ? { op: 'patch', changes } : null;
+  return hasChanges ? { op: "patch", changes } : null;
 }

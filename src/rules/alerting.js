@@ -9,7 +9,12 @@
  * @module @plures/chronos/rules/alerting
  */
 
-import { defineRule, defineConstraint, defineModule, RuleResult } from '@plures/praxis';
+import {
+  defineConstraint,
+  defineModule,
+  defineRule,
+  RuleResult,
+} from "@plures/praxis";
 
 // ── Defaults ───────────────────────────────────────────────────────────────
 
@@ -76,7 +81,7 @@ export const DEFAULT_ANOMALY_Z_THRESHOLD = 2.5;
  * engine.step([{ tag: ALERT_EVALUATION_REQUESTED, payload: { recentNodes: chronicle._nodes } }]);
  * ```
  */
-export const ALERT_EVALUATION_REQUESTED = 'chronos.alert.evaluationRequested';
+export const ALERT_EVALUATION_REQUESTED = "chronos.alert.evaluationRequested";
 
 // ── Rules ──────────────────────────────────────────────────────────────────
 
@@ -99,24 +104,33 @@ export const ALERT_EVALUATION_REQUESTED = 'chronos.alert.evaluationRequested';
  * ```
  */
 export const burstDetectionRule = defineRule({
-  id: 'chronos.alert.burstDetection',
-  description: 'Detect high-frequency diff bursts within a rolling time window',
+  id: "chronos.alert.burstDetection",
+  description: "Detect high-frequency diff bursts within a rolling time window",
   eventTypes: ALERT_EVALUATION_REQUESTED,
   contract: {
-    ruleId: 'chronos.alert.burstDetection',
-    behavior: 'Emits a burst alert when diff rate exceeds the configured threshold',
+    ruleId: "chronos.alert.burstDetection",
+    behavior:
+      "Emits a burst alert when diff rate exceeds the configured threshold",
     examples: [
-      { given: '60 diffs in 5 s with threshold=50', when: 'evaluation requested', then: 'alert.burst emitted' },
-      { given: '30 diffs in 5 s with threshold=50', when: 'evaluation requested', then: 'no alert' },
+      {
+        given: "60 diffs in 5 s with threshold=50",
+        when: "evaluation requested",
+        then: "alert.burst emitted",
+      },
+      {
+        given: "30 diffs in 5 s with threshold=50",
+        when: "evaluation requested",
+        then: "no alert",
+      },
     ],
     invariants: [
-      'burstThreshold must be a positive integer',
-      'Alert must include the actual count and threshold in its payload',
+      "burstThreshold must be a positive integer",
+      "Alert must include the actual count and threshold in its payload",
     ],
   },
   impl: (state, events) => {
     const event = events.find((e) => e.tag === ALERT_EVALUATION_REQUESTED);
-    if (!event) return RuleResult.skip('No alert evaluation event in batch');
+    if (!event) return RuleResult.skip("No alert evaluation event in batch");
 
     const {
       recentNodes,
@@ -126,11 +140,13 @@ export const burstDetectionRule = defineRule({
 
     // Context is the authoritative source for burstThreshold; fall back to payload then default
     const burstThreshold =
-      state && state.context && typeof state.context.burstThreshold === 'number'
+      state && state.context && typeof state.context.burstThreshold === "number"
         ? state.context.burstThreshold
         : (event.payload.burstThreshold ?? DEFAULT_BURST_THRESHOLD);
 
-    if (!Array.isArray(recentNodes)) return RuleResult.skip('No nodes provided');
+    if (!Array.isArray(recentNodes)) {
+      return RuleResult.skip("No nodes provided");
+    }
 
     const windowStart = nowMs - windowMs;
     const inWindow = recentNodes.filter((n) => n.timestamp >= windowStart);
@@ -138,18 +154,21 @@ export const burstDetectionRule = defineRule({
     if (inWindow.length > burstThreshold) {
       return RuleResult.emit([
         {
-          tag: 'chronos.alert.burst',
+          tag: "chronos.alert.burst",
           payload: {
             count: inWindow.length,
             threshold: burstThreshold,
             windowMs,
-            message: `Diff burst detected: ${inWindow.length} diffs in ${windowMs}ms (threshold=${burstThreshold})`,
+            message:
+              `Diff burst detected: ${inWindow.length} diffs in ${windowMs}ms (threshold=${burstThreshold})`,
           },
         },
       ]);
     }
 
-    return RuleResult.noop(`Diff rate ${inWindow.length}/${burstThreshold} within threshold`);
+    return RuleResult.noop(
+      `Diff rate ${inWindow.length}/${burstThreshold} within threshold`,
+    );
   },
 });
 
@@ -172,63 +191,85 @@ export const burstDetectionRule = defineRule({
  * ```
  */
 export const criticalSpikeRule = defineRule({
-  id: 'chronos.alert.criticalSpike',
-  description: 'Detect an unusual proportion of critical-severity diffs',
+  id: "chronos.alert.criticalSpike",
+  description: "Detect an unusual proportion of critical-severity diffs",
   eventTypes: ALERT_EVALUATION_REQUESTED,
   contract: {
-    ruleId: 'chronos.alert.criticalSpike',
-    behavior: 'Emits a critical-spike alert when critical diffs exceed the configured ratio',
+    ruleId: "chronos.alert.criticalSpike",
+    behavior:
+      "Emits a critical-spike alert when critical diffs exceed the configured ratio",
     examples: [
-      { given: '30% critical diffs with threshold=25%', when: 'evaluation requested', then: 'alert.criticalSpike emitted' },
-      { given: '10% critical diffs with threshold=25%', when: 'evaluation requested', then: 'no alert' },
+      {
+        given: "30% critical diffs with threshold=25%",
+        when: "evaluation requested",
+        then: "alert.criticalSpike emitted",
+      },
+      {
+        given: "10% critical diffs with threshold=25%",
+        when: "evaluation requested",
+        then: "no alert",
+      },
     ],
     invariants: [
-      'criticalRatioThreshold must be between 0 and 1',
-      'At least one node must be present to compute a meaningful ratio',
+      "criticalRatioThreshold must be between 0 and 1",
+      "At least one node must be present to compute a meaningful ratio",
     ],
   },
   impl: (_state, events) => {
     const event = events.find((e) => e.tag === ALERT_EVALUATION_REQUESTED);
-    if (!event) return RuleResult.skip('No alert evaluation event in batch');
+    if (!event) return RuleResult.skip("No alert evaluation event in batch");
 
     const {
       recentNodes,
-      criticalRatioThreshold: rawCriticalRatioThreshold = DEFAULT_CRITICAL_RATIO_THRESHOLD,
+      criticalRatioThreshold: rawCriticalRatioThreshold =
+        DEFAULT_CRITICAL_RATIO_THRESHOLD,
     } = event.payload;
 
     if (!Array.isArray(recentNodes) || recentNodes.length === 0) {
-      return RuleResult.noop('No nodes to evaluate');
+      return RuleResult.noop("No nodes to evaluate");
     }
 
     const criticalRatioThreshold = Number(rawCriticalRatioThreshold);
     if (!Number.isFinite(criticalRatioThreshold)) {
-      return RuleResult.skip('Invalid criticalRatioThreshold: must be a finite number between 0 and 1');
+      return RuleResult.skip(
+        "Invalid criticalRatioThreshold: must be a finite number between 0 and 1",
+      );
     }
     if (criticalRatioThreshold < 0 || criticalRatioThreshold > 1) {
       return RuleResult.skip(
-        `Invalid criticalRatioThreshold: must be between 0 and 1 (received ${String(rawCriticalRatioThreshold)})`
+        `Invalid criticalRatioThreshold: must be between 0 and 1 (received ${
+          String(rawCriticalRatioThreshold)
+        })`,
       );
     }
 
-    const criticalCount = recentNodes.filter((n) => n.severity === 'critical').length;
+    const criticalCount = recentNodes.filter((n) =>
+      n.severity === "critical"
+    ).length;
     const ratio = criticalCount / recentNodes.length;
 
     if (ratio > criticalRatioThreshold) {
       return RuleResult.emit([
         {
-          tag: 'chronos.alert.criticalSpike',
+          tag: "chronos.alert.criticalSpike",
           payload: {
             ratio,
             threshold: criticalRatioThreshold,
             criticalCount,
             totalCount: recentNodes.length,
-            message: `Critical diff spike: ${(ratio * 100).toFixed(1)}% of recent diffs are critical (threshold=${(criticalRatioThreshold * 100).toFixed(1)}%)`,
+            message: `Critical diff spike: ${
+              (ratio * 100).toFixed(1)
+            }% of recent diffs are critical (threshold=${
+              (criticalRatioThreshold * 100).toFixed(1)
+            }%)`,
           },
         },
       ]);
     }
 
-    return RuleResult.noop(`Critical ratio ${(ratio * 100).toFixed(1)}% within threshold`);
+    return RuleResult.noop(
+      `Critical ratio ${(ratio * 100).toFixed(1)}% within threshold`,
+    );
   },
 });
 
@@ -251,24 +292,34 @@ export const criticalSpikeRule = defineRule({
  * ```
  */
 export const impactAnomalyRule = defineRule({
-  id: 'chronos.alert.impactAnomaly',
-  description: 'Detect impact-score outliers using Z-score deviation from rolling mean',
+  id: "chronos.alert.impactAnomaly",
+  description:
+    "Detect impact-score outliers using Z-score deviation from rolling mean",
   eventTypes: ALERT_EVALUATION_REQUESTED,
   contract: {
-    ruleId: 'chronos.alert.impactAnomaly',
-    behavior: 'Emits an anomaly alert for diffs whose impact score is a statistical outlier',
+    ruleId: "chronos.alert.impactAnomaly",
+    behavior:
+      "Emits an anomaly alert for diffs whose impact score is a statistical outlier",
     examples: [
-      { given: 'impact score is 95 with mean=20 and σ=5, z=2.5', when: 'evaluation requested', then: 'alert.impactAnomaly emitted' },
-      { given: 'impact score is 22 with mean=20 and σ=5', when: 'evaluation requested', then: 'no alert' },
+      {
+        given: "impact score is 95 with mean=20 and σ=5, z=2.5",
+        when: "evaluation requested",
+        then: "alert.impactAnomaly emitted",
+      },
+      {
+        given: "impact score is 22 with mean=20 and σ=5",
+        when: "evaluation requested",
+        then: "no alert",
+      },
     ],
     invariants: [
-      'anomalyZThreshold must be positive',
-      'At least 2 nodes are required for standard deviation computation',
+      "anomalyZThreshold must be positive",
+      "At least 2 nodes are required for standard deviation computation",
     ],
   },
   impl: (_state, events) => {
     const event = events.find((e) => e.tag === ALERT_EVALUATION_REQUESTED);
-    if (!event) return RuleResult.skip('No alert evaluation event in batch');
+    if (!event) return RuleResult.skip("No alert evaluation event in batch");
 
     const {
       recentNodes,
@@ -277,31 +328,38 @@ export const impactAnomalyRule = defineRule({
     } = event.payload;
 
     if (!Array.isArray(recentNodes)) {
-      return RuleResult.noop('Not enough historical nodes for anomaly detection');
+      return RuleResult.noop(
+        "Not enough historical nodes for anomaly detection",
+      );
     }
-    if (!latestNode || typeof latestNode.impactScore !== 'number') {
-      return RuleResult.skip('Latest node has no impact score');
+    if (!latestNode || typeof latestNode.impactScore !== "number") {
+      return RuleResult.skip("Latest node has no impact score");
     }
 
     const scores = recentNodes
       .map((n) => n.impactScore)
-      .filter((score) => typeof score === 'number');
+      .filter((score) => typeof score === "number");
 
     if (scores.length < 2) {
-      return RuleResult.noop('Not enough historical impact scores for anomaly detection');
+      return RuleResult.noop(
+        "Not enough historical impact scores for anomaly detection",
+      );
     }
     const mean = scores.reduce((s, v) => s + v, 0) / scores.length;
-    const variance = scores.reduce((s, v) => s + (v - mean) ** 2, 0) / scores.length;
+    const variance = scores.reduce((s, v) => s + (v - mean) ** 2, 0) /
+      scores.length;
     const stdDev = Math.sqrt(variance);
 
-    if (stdDev === 0) return RuleResult.noop('Zero variance — no anomaly possible');
+    if (stdDev === 0) {
+      return RuleResult.noop("Zero variance — no anomaly possible");
+    }
 
     const zScore = (latestNode.impactScore - mean) / stdDev;
 
     if (zScore > anomalyZThreshold) {
       return RuleResult.emit([
         {
-          tag: 'chronos.alert.impactAnomaly',
+          tag: "chronos.alert.impactAnomaly",
           payload: {
             nodeId: latestNode.id,
             impactScore: latestNode.impactScore,
@@ -309,13 +367,18 @@ export const impactAnomalyRule = defineRule({
             stdDev,
             zScore,
             threshold: anomalyZThreshold,
-            message: `Impact anomaly on ${latestNode.id}: score=${latestNode.impactScore}, z=${zScore.toFixed(2)} (threshold=${anomalyZThreshold})`,
+            message:
+              `Impact anomaly on ${latestNode.id}: score=${latestNode.impactScore}, z=${
+                zScore.toFixed(2)
+              } (threshold=${anomalyZThreshold})`,
           },
         },
       ]);
     }
 
-    return RuleResult.noop(`Impact score z=${zScore.toFixed(2)} within normal range`);
+    return RuleResult.noop(
+      `Impact score z=${zScore.toFixed(2)} within normal range`,
+    );
   },
 });
 
@@ -334,22 +397,31 @@ export const impactAnomalyRule = defineRule({
  * ```
  */
 export const positiveBurstThresholdConstraint = defineConstraint({
-  id: 'chronos.alert.positiveBurstThreshold',
-  description: 'burstThreshold must be a positive integer when specified',
+  id: "chronos.alert.positiveBurstThreshold",
+  description: "burstThreshold must be a positive integer when specified",
   contract: {
-    ruleId: 'chronos.alert.positiveBurstThreshold',
-    behavior: 'Guards against non-positive or non-integer burst threshold configuration',
+    ruleId: "chronos.alert.positiveBurstThreshold",
+    behavior:
+      "Guards against non-positive or non-integer burst threshold configuration",
     examples: [
-      { given: 'burstThreshold=50', when: 'constraint checked', then: 'passes' },
-      { given: 'burstThreshold=-1', when: 'constraint checked', then: 'violation' },
+      {
+        given: "burstThreshold=50",
+        when: "constraint checked",
+        then: "passes",
+      },
+      {
+        given: "burstThreshold=-1",
+        when: "constraint checked",
+        then: "violation",
+      },
     ],
-    invariants: ['burstThreshold must be a positive integer'],
+    invariants: ["burstThreshold must be a positive integer"],
   },
   impl: (state) => {
     const { burstThreshold } = state.context;
     if (burstThreshold === undefined || burstThreshold === null) return true;
     if (
-      typeof burstThreshold !== 'number' ||
+      typeof burstThreshold !== "number" ||
       !Number.isInteger(burstThreshold) ||
       burstThreshold <= 0
     ) {
@@ -377,5 +449,5 @@ export const positiveBurstThresholdConstraint = defineConstraint({
 export const alertingModule = defineModule({
   rules: [burstDetectionRule, criticalSpikeRule, impactAnomalyRule],
   constraints: [positiveBurstThresholdConstraint],
-  meta: { domain: 'alerting', version: '1.0.0' },
+  meta: { domain: "alerting", version: "1.0.0" },
 });

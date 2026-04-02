@@ -4,7 +4,7 @@
  * @module @plures/chronos/time-travel
  */
 
-import type { ChronicleNode } from './chronicle.js';
+import type { ChronicleNode } from "./chronicle.js";
 
 /** Options for `createTimeTravelDebugger`. */
 export interface TimeTravelOptions {

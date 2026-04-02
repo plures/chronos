@@ -48,9 +48,9 @@
  * ```
  */
 export function traceCausalChain(nodes, edges, nodeId, {
-  direction = 'backward',
+  direction = "backward",
   maxDepth = 10,
-  edgeType = 'causes',
+  edgeType = "causes",
 } = {}) {
   // Build lookup structures for O(1) node resolution and O(degree) edge traversal
   const nodeMap = new Map(nodes.map((n) => [n.id, n]));
@@ -83,10 +83,9 @@ export function traceCausalChain(nodes, edges, nodeId, {
     const node = nodeMap.get(id);
     if (node) result.push(node);
 
-    const neighbors =
-      direction === 'backward'
-        ? backwardIndex.get(id) ?? []
-        : forwardIndex.get(id) ?? [];
+    const neighbors = direction === "backward"
+      ? backwardIndex.get(id) ?? []
+      : forwardIndex.get(id) ?? [];
 
     for (const nextId of neighbors) {
       queue.push({ id: nextId, depth: depth + 1 });

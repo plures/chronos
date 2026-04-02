@@ -4,10 +4,14 @@
  * @module @plures/chronos/rules/diff-classification
  */
 
-import type { RuleDescriptor, ConstraintDescriptor, PraxisModule } from '@plures/praxis';
+import type {
+  ConstraintDescriptor,
+  PraxisModule,
+  RuleDescriptor,
+} from "@plures/praxis";
 
 /** Event tag emitted by Chronos whenever a new ChronicleNode is recorded. */
-export declare const DIFF_RECORDED: 'chronos.diff.recorded';
+export declare const DIFF_RECORDED: "chronos.diff.recorded";
 
 /** Classifies a diff as create, update, or delete based on before/after values. */
 export declare const classifyChangeTypeRule: RuleDescriptor<unknown>;

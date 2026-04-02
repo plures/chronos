@@ -4,7 +4,7 @@
  * @module @plures/chronos/trace
  */
 
-import type { ChronicleNode, ChronicleEdge } from './chronicle.js';
+import type { ChronicleEdge, ChronicleNode } from "./chronicle.js";
 
 /** Options for `traceCausalChain`. */
 export interface TraceCausalChainOptions {
@@ -13,7 +13,7 @@ export interface TraceCausalChainOptions {
    * `'forward'`  follows `causes` edges toward downstream effects.
    * @default 'backward'
    */
-  direction?: 'backward' | 'forward';
+  direction?: "backward" | "forward";
   /**
    * Maximum number of hops from the starting node.
    * @default 10

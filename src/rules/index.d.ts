@@ -4,7 +4,7 @@
  * @module @plures/chronos/rules
  */
 
-export * from './diff-classification.js';
-export * from './retention-policy.js';
-export * from './alerting.js';
-export * from './integrity.js';
+export * from "./diff-classification.js";
+export * from "./retention-policy.js";
+export * from "./alerting.js";
+export * from "./integrity.js";

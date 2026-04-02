@@ -17,7 +17,7 @@ function getALS() {
     // Dynamic require to avoid bundler issues
     // deno-lint-ignore no-undef
     const hooks = globalThis.process?.versions?.node
-      ? require('node:async_hooks')
+      ? require("node:async_hooks")
       : null;
     if (hooks?.AsyncLocalStorage) {
       _als = new hooks.AsyncLocalStorage();
@@ -86,7 +86,7 @@ export function withCause(causeId, fn) {
   let isAsync = false;
   try {
     const result = fn();
-    if (result && typeof result.then === 'function') {
+    if (result && typeof result.then === "function") {
       isAsync = true;
       return result.finally(() => {
         const idx = _stack.lastIndexOf(causeId);

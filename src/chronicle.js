@@ -7,8 +7,8 @@
  * @module @plures/chronos/chronicle
  */
 
-import { currentCause, withCause } from './causal.js';
-import { computeDiff } from './diff.js';
+import { currentCause, withCause } from "./causal.js";
+import { computeDiff } from "./diff.js";
 
 // ── Chronicle Node ───────────────────────────────────────────────────────────
 
@@ -110,7 +110,8 @@ export function createChronicleNode(path, before, after, contextId) {
  * ```
  */
 export function createChronicle(db, options = {}) {
-  const { contextId = null, debounceMs = 0, maxBatch = 100, writer = null } = options;
+  const { contextId = null, debounceMs = 0, maxBatch = 100, writer = null } =
+    options;
 
   const nodes = [];
   const edges = [];
@@ -146,13 +147,23 @@ export function createChronicle(db, options = {}) {
       const batchEdges = [];
 
       if (node.cause) {
-        const edge = { from: node.cause, to: node.id, type: 'causes', timestamp: node.timestamp };
+        const edge = {
+          from: node.cause,
+          to: node.id,
+          type: "causes",
+          timestamp: node.timestamp,
+        };
         edges.push(edge);
         batchEdges.push(edge);
       }
 
       if (node.context) {
-        const edge = { from: node.context, to: node.id, type: 'context', timestamp: node.timestamp };
+        const edge = {
+          from: node.context,
+          to: node.id,
+          type: "context",
+          timestamp: node.timestamp,
+        };
         edges.push(edge);
         batchEdges.push(edge);
       }
@@ -164,7 +175,7 @@ export function createChronicle(db, options = {}) {
   // ── Change handler ──────────────────────────────────────────────────────
 
   function _handleChange(data, key) {
-    const path = key ?? 'root';
+    const path = key ?? "root";
     const before = previousValues.get(path) ?? null;
     const after = data;
 
@@ -201,8 +212,15 @@ export function createChronicle(db, options = {}) {
     const state = _debounce.get(path);
     state.timer = setTimeout(() => {
       // Build the node inside the original causal context
-      const node = withCause(state.cause, () =>
-        createChronicleNode(path, state.originalBefore, state.latestAfter, contextId)
+      const node = withCause(
+        state.cause,
+        () =>
+          createChronicleNode(
+            path,
+            state.originalBefore,
+            state.latestAfter,
+            contextId,
+          ),
       );
       pendingWrite.push(node);
       _scheduleBatchWrite();
@@ -213,9 +231,9 @@ export function createChronicle(db, options = {}) {
   // ── Lifecycle ───────────────────────────────────────────────────────────
 
   function start() {
-    if (!db || typeof db.on !== 'function') {
+    if (!db || typeof db.on !== "function") {
       throw new Error(
-        'createChronicle requires a PluresDB instance with .on() subscription support'
+        "createChronicle requires a PluresDB instance with .on() subscription support",
       );
     }
     if (unsubscribe) return; // already started
@@ -230,8 +248,15 @@ export function createChronicle(db, options = {}) {
     // Flush any pending debounce windows immediately
     for (const [path, state] of _debounce) {
       clearTimeout(state.timer);
-      const node = withCause(state.cause, () =>
-        createChronicleNode(path, state.originalBefore, state.latestAfter, contextId)
+      const node = withCause(
+        state.cause,
+        () =>
+          createChronicleNode(
+            path,
+            state.originalBefore,
+            state.latestAfter,
+            contextId,
+          ),
       );
       pendingWrite.push(node);
     }
@@ -259,7 +284,7 @@ export function createChronicle(db, options = {}) {
    * @param {number} [maxDepth=10]
    * @returns {object[]} Ordered list of ChronicleNodes
    */
-  function trace(nodeId, { direction = 'backward', maxDepth = 10 } = {}) {
+  function trace(nodeId, { direction = "backward", maxDepth = 10 } = {}) {
     const result = [];
     const visited = new Set();
     const queue = [{ id: nodeId, depth: 0 }];
@@ -272,13 +297,15 @@ export function createChronicle(db, options = {}) {
       const node = nodes.find((n) => n.id === id);
       if (node) result.push(node);
 
-      const connected =
-        direction === 'backward'
-          ? edges.filter((e) => e.to === id && e.type === 'causes')
-          : edges.filter((e) => e.from === id && e.type === 'causes');
+      const connected = direction === "backward"
+        ? edges.filter((e) => e.to === id && e.type === "causes")
+        : edges.filter((e) => e.from === id && e.type === "causes");
 
       for (const edge of connected) {
-        queue.push({ id: direction === 'backward' ? edge.from : edge.to, depth: depth + 1 });
+        queue.push({
+          id: direction === "backward" ? edge.from : edge.to,
+          depth: depth + 1,
+        });
       }
     }
 
@@ -304,7 +331,9 @@ export function createChronicle(db, options = {}) {
    */
   function subgraph(ctxId) {
     const ids = new Set(
-      edges.filter((e) => e.type === 'context' && e.from === ctxId).map((e) => e.to)
+      edges.filter((e) => e.type === "context" && e.from === ctxId).map((e) =>
+        e.to
+      ),
     );
     return nodes.filter((n) => ids.has(n.id));
   }
@@ -316,7 +345,9 @@ export function createChronicle(db, options = {}) {
    * @returns {object[]} Nodes sorted by timestamp ascending
    */
   function history(path) {
-    return nodes.filter((n) => n.path === path).sort((a, b) => a.timestamp - b.timestamp);
+    return nodes.filter((n) => n.path === path).sort((a, b) =>
+      a.timestamp - b.timestamp
+    );
   }
 
   /**
@@ -325,7 +356,11 @@ export function createChronicle(db, options = {}) {
    * @returns {{ nodes: number, edges: number, pending: number }}
    */
   function stats() {
-    return { nodes: nodes.length, edges: edges.length, pending: pendingWrite.length };
+    return {
+      nodes: nodes.length,
+      edges: edges.length,
+      pending: pendingWrite.length,
+    };
   }
 
   // Auto-start when created

@@ -4,7 +4,7 @@
  * @module @plures/chronos/semantic
  */
 
-import type { ChronicleNode } from './chronicle.js';
+import type { ChronicleNode } from "./chronicle.js";
 
 /** Options for `createSemanticIndex`. */
 export interface SemanticIndexOptions {
@@ -86,7 +86,10 @@ export interface SemanticIndex {
    * @param query   - Natural language search query
    * @param options - Search options
    */
-  search(query: string, options?: SemanticSearchOptions): Promise<SemanticSearchResult[]>;
+  search(
+    query: string,
+    options?: SemanticSearchOptions,
+  ): Promise<SemanticSearchResult[]>;
 
   /**
    * Search and trace — find relevant nodes then walk their causal chains.

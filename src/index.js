@@ -6,7 +6,7 @@
  * @module @plures/chronos
  */
 
-import { currentCause, withCause } from './causal.js';
+import { currentCause, withCause } from "./causal.js";
 
 // ── Chronicle Node ──────────────────────────────────────────────────────────
 
@@ -70,7 +70,8 @@ export function createNode(path, before, after, contextId) {
  * ```
  */
 export function createChronos(db, options = {}) {
-  const { contextId = null, batchMs = 50, maxBatch = 100, writer = null } = options;
+  const { contextId = null, batchMs = 50, maxBatch = 100, writer = null } =
+    options;
   const nodes = [];
   const edges = [];
   const pendingWrite = [];
@@ -101,7 +102,7 @@ export function createChronos(db, options = {}) {
         const edge = {
           from: node.cause,
           to: node.id,
-          type: 'causes',
+          type: "causes",
           timestamp: node.timestamp,
         };
         edges.push(edge);
@@ -113,7 +114,7 @@ export function createChronos(db, options = {}) {
         const edge = {
           from: node.context,
           to: node.id,
-          type: 'context',
+          type: "context",
           timestamp: node.timestamp,
         };
         edges.push(edge);
@@ -132,15 +133,17 @@ export function createChronos(db, options = {}) {
   let unsubscribe = null;
 
   function start() {
-    if (!db || typeof db.on !== 'function') {
-      throw new Error('Chronos requires a PluresDB instance with .on() subscription support');
+    if (!db || typeof db.on !== "function") {
+      throw new Error(
+        "Chronos requires a PluresDB instance with .on() subscription support",
+      );
     }
 
     // Track previous values for diff computation
     const previousValues = new Map();
 
     unsubscribe = db.on((data, key) => {
-      const path = key ?? 'root';
+      const path = key ?? "root";
       const before = previousValues.get(path) ?? null;
       const after = data;
 
@@ -156,7 +159,7 @@ export function createChronos(db, options = {}) {
   }
 
   function stop() {
-    if (unsubscribe && typeof unsubscribe === 'function') {
+    if (unsubscribe && typeof unsubscribe === "function") {
       unsubscribe();
     }
     if (flushTimer) {
@@ -174,7 +177,7 @@ export function createChronos(db, options = {}) {
    * @param {number} [maxDepth=10]
    * @returns {object[]} Ordered list of ChronicleNodes
    */
-  function trace(nodeId, { direction = 'backward', maxDepth = 10 } = {}) {
+  function trace(nodeId, { direction = "backward", maxDepth = 10 } = {}) {
     const result = [];
     const visited = new Set();
     const queue = [{ id: nodeId, depth: 0 }];
@@ -188,13 +191,12 @@ export function createChronos(db, options = {}) {
       if (node) result.push(node);
 
       // Find connected edges
-      const connected =
-        direction === 'backward'
-          ? edges.filter((e) => e.to === id && e.type === 'causes')
-          : edges.filter((e) => e.from === id && e.type === 'causes');
+      const connected = direction === "backward"
+        ? edges.filter((e) => e.to === id && e.type === "causes")
+        : edges.filter((e) => e.from === id && e.type === "causes");
 
       for (const edge of connected) {
-        const nextId = direction === 'backward' ? edge.from : edge.to;
+        const nextId = direction === "backward" ? edge.from : edge.to;
         queue.push({ id: nextId, depth: depth + 1 });
       }
     }
@@ -221,7 +223,9 @@ export function createChronos(db, options = {}) {
    */
   function subgraph(ctxId) {
     const contextNodeIds = new Set(
-      edges.filter((e) => e.type === 'context' && e.from === ctxId).map((e) => e.to)
+      edges.filter((e) => e.type === "context" && e.from === ctxId).map((e) =>
+        e.to
+      ),
     );
     return nodes.filter((n) => contextNodeIds.has(n.id));
   }
@@ -233,7 +237,9 @@ export function createChronos(db, options = {}) {
    * @returns {object[]} Nodes sorted by timestamp ascending
    */
   function history(path) {
-    return nodes.filter((n) => n.path === path).sort((a, b) => a.timestamp - b.timestamp);
+    return nodes.filter((n) => n.path === path).sort((a, b) =>
+      a.timestamp - b.timestamp
+    );
   }
 
   /**

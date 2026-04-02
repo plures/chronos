@@ -10,7 +10,12 @@
  * @module @plures/chronos/rules/retention-policy
  */
 
-import { defineRule, defineConstraint, defineModule, RuleResult } from '@plures/praxis';
+import {
+  defineConstraint,
+  defineModule,
+  defineRule,
+  RuleResult,
+} from "@plures/praxis";
 
 // ── Defaults ───────────────────────────────────────────────────────────────
 
@@ -53,7 +58,7 @@ export const DEFAULT_MAX_NODES = 10_000;
  * }]);
  * ```
  */
-export const RETENTION_AUDIT_REQUESTED = 'chronos.retention.auditRequested';
+export const RETENTION_AUDIT_REQUESTED = "chronos.retention.auditRequested";
 
 // ── Rules ──────────────────────────────────────────────────────────────────
 
@@ -77,33 +82,44 @@ export const RETENTION_AUDIT_REQUESTED = 'chronos.retention.auditRequested';
  * ```
  */
 export const agePruningRule = defineRule({
-  id: 'chronos.retention.agePruning',
-  description: 'Mark nodes older than the configured TTL as eligible for pruning',
+  id: "chronos.retention.agePruning",
+  description:
+    "Mark nodes older than the configured TTL as eligible for pruning",
   eventTypes: RETENTION_AUDIT_REQUESTED,
   contract: {
-    ruleId: 'chronos.retention.agePruning',
-    behavior: 'Identifies stale nodes for pruning based on age threshold',
+    ruleId: "chronos.retention.agePruning",
+    behavior: "Identifies stale nodes for pruning based on age threshold",
     examples: [
-      { given: 'node is 8 days old with TTL=7d', when: 'audit requested', then: 'pruneEligible emitted for that node' },
-      { given: 'node is 3 days old with TTL=7d', when: 'audit requested', then: 'no pruneEligible for that node' },
+      {
+        given: "node is 8 days old with TTL=7d",
+        when: "audit requested",
+        then: "pruneEligible emitted for that node",
+      },
+      {
+        given: "node is 3 days old with TTL=7d",
+        when: "audit requested",
+        then: "no pruneEligible for that node",
+      },
     ],
     invariants: [
-      'Critical-path nodes (isCritical=true) must never be included in pruneEligible',
-      'TTL must be a positive number',
+      "Critical-path nodes (isCritical=true) must never be included in pruneEligible",
+      "TTL must be a positive number",
     ],
   },
   impl: (_state, events) => {
     const event = events.find((e) => e.tag === RETENTION_AUDIT_REQUESTED);
-    if (!event) return RuleResult.skip('No retention audit event in batch');
+    if (!event) return RuleResult.skip("No retention audit event in batch");
 
     const { nodes, ttlMs = DEFAULT_TTL_MS, nowMs = Date.now() } = event.payload;
 
-    if (typeof ttlMs !== 'number' || !Number.isFinite(ttlMs) || ttlMs <= 0) {
-      return RuleResult.skip('Invalid ttlMs: must be a positive, finite number');
+    if (typeof ttlMs !== "number" || !Number.isFinite(ttlMs) || ttlMs <= 0) {
+      return RuleResult.skip(
+        "Invalid ttlMs: must be a positive, finite number",
+      );
     }
 
     if (!Array.isArray(nodes) || nodes.length === 0) {
-      return RuleResult.noop('No nodes provided for audit');
+      return RuleResult.noop("No nodes provided for audit");
     }
 
     const eligible = nodes
@@ -111,11 +127,14 @@ export const agePruningRule = defineRule({
       .map((n) => n.id);
 
     if (eligible.length === 0) {
-      return RuleResult.noop('No nodes exceed the age threshold');
+      return RuleResult.noop("No nodes exceed the age threshold");
     }
 
     return RuleResult.emit([
-      { tag: 'chronos.retention.pruneEligible', payload: { reason: 'age', nodeIds: eligible } },
+      {
+        tag: "chronos.retention.pruneEligible",
+        payload: { reason: "age", nodeIds: eligible },
+      },
     ]);
   },
 });
@@ -139,28 +158,37 @@ export const agePruningRule = defineRule({
  * ```
  */
 export const quotaEnforcementRule = defineRule({
-  id: 'chronos.retention.quotaEnforcement',
-  description: 'Enforce maximum node count by marking oldest nodes as prunable',
+  id: "chronos.retention.quotaEnforcement",
+  description: "Enforce maximum node count by marking oldest nodes as prunable",
   eventTypes: RETENTION_AUDIT_REQUESTED,
   contract: {
-    ruleId: 'chronos.retention.quotaEnforcement',
-    behavior: 'Trims the oldest nodes when total count exceeds the configured quota',
+    ruleId: "chronos.retention.quotaEnforcement",
+    behavior:
+      "Trims the oldest nodes when total count exceeds the configured quota",
     examples: [
-      { given: '10,100 nodes with maxNodes=10,000', when: 'audit requested', then: 'pruneEligible for 100 oldest' },
-      { given: '5,000 nodes with maxNodes=10,000', when: 'audit requested', then: 'no pruneEligible emitted' },
+      {
+        given: "10,100 nodes with maxNodes=10,000",
+        when: "audit requested",
+        then: "pruneEligible for 100 oldest",
+      },
+      {
+        given: "5,000 nodes with maxNodes=10,000",
+        when: "audit requested",
+        then: "no pruneEligible emitted",
+      },
     ],
     invariants: [
-      'Critical-path nodes must never be pruned by quota enforcement',
-      'The youngest nodes must be retained in preference to older ones',
+      "Critical-path nodes must never be pruned by quota enforcement",
+      "The youngest nodes must be retained in preference to older ones",
     ],
   },
   impl: (_state, events) => {
     const event = events.find((e) => e.tag === RETENTION_AUDIT_REQUESTED);
-    if (!event) return RuleResult.skip('No retention audit event in batch');
+    if (!event) return RuleResult.skip("No retention audit event in batch");
 
     const { nodes, maxNodes = DEFAULT_MAX_NODES } = event.payload;
     if (!Array.isArray(nodes) || nodes.length <= maxNodes) {
-      return RuleResult.noop('Node count within quota');
+      return RuleResult.noop("Node count within quota");
     }
 
     const nonCritical = nodes
@@ -171,15 +199,15 @@ export const quotaEnforcementRule = defineRule({
     const toPrune = nonCritical.slice(0, excess).map((n) => n.id);
 
     if (toPrune.length === 0) {
-      return RuleResult.noop('All nodes are critical; quota cannot be reduced');
+      return RuleResult.noop("All nodes are critical; quota cannot be reduced");
     }
 
     const remainingExcess = excess - toPrune.length;
     const facts = [
       {
-        tag: 'chronos.retention.pruneEligible',
+        tag: "chronos.retention.pruneEligible",
         payload: {
-          reason: 'quota',
+          reason: "quota",
           nodeIds: toPrune,
           remainingExcess: remainingExcess > 0 ? remainingExcess : 0,
         },
@@ -188,9 +216,9 @@ export const quotaEnforcementRule = defineRule({
 
     if (remainingExcess > 0) {
       facts.push({
-        tag: 'chronos.retention.quotaStillExceeded',
+        tag: "chronos.retention.quotaStillExceeded",
         payload: {
-          reason: 'quota',
+          reason: "quota",
           remainingExcess,
           maxNodes,
           totalNodes: nodes.length,
@@ -222,21 +250,33 @@ export const quotaEnforcementRule = defineRule({
  * ```
  */
 export const archivalGateRule = defineRule({
-  id: 'chronos.retention.archivalGate',
-  description: 'Flag critical-path nodes for archival when they exceed the archive age threshold',
+  id: "chronos.retention.archivalGate",
+  description:
+    "Flag critical-path nodes for archival when they exceed the archive age threshold",
   eventTypes: RETENTION_AUDIT_REQUESTED,
   contract: {
-    ruleId: 'chronos.retention.archivalGate',
-    behavior: 'Identifies critical nodes that should be archived rather than pruned',
+    ruleId: "chronos.retention.archivalGate",
+    behavior:
+      "Identifies critical nodes that should be archived rather than pruned",
     examples: [
-      { given: 'critical node is 31 days old with archiveAfterMs=30d', when: 'audit requested', then: 'archiveRequired emitted' },
-      { given: 'critical node is 10 days old with archiveAfterMs=30d', when: 'audit requested', then: 'no archiveRequired' },
+      {
+        given: "critical node is 31 days old with archiveAfterMs=30d",
+        when: "audit requested",
+        then: "archiveRequired emitted",
+      },
+      {
+        given: "critical node is 10 days old with archiveAfterMs=30d",
+        when: "audit requested",
+        then: "no archiveRequired",
+      },
     ],
-    invariants: ['Non-critical nodes are never candidates for archival via this rule'],
+    invariants: [
+      "Non-critical nodes are never candidates for archival via this rule",
+    ],
   },
   impl: (_state, events) => {
     const event = events.find((e) => e.tag === RETENTION_AUDIT_REQUESTED);
-    if (!event) return RuleResult.skip('No retention audit event in batch');
+    if (!event) return RuleResult.skip("No retention audit event in batch");
 
     const {
       nodes,
@@ -245,7 +285,7 @@ export const archivalGateRule = defineRule({
     } = event.payload;
 
     if (!Array.isArray(nodes) || nodes.length === 0) {
-      return RuleResult.noop('No nodes provided for archival check');
+      return RuleResult.noop("No nodes provided for archival check");
     }
 
     const toArchive = nodes
@@ -253,11 +293,14 @@ export const archivalGateRule = defineRule({
       .map((n) => n.id);
 
     if (toArchive.length === 0) {
-      return RuleResult.noop('No critical nodes exceed the archival age');
+      return RuleResult.noop("No critical nodes exceed the archival age");
     }
 
     return RuleResult.emit([
-      { tag: 'chronos.retention.archiveRequired', payload: { nodeIds: toArchive } },
+      {
+        tag: "chronos.retention.archiveRequired",
+        payload: { nodeIds: toArchive },
+      },
     ]);
   },
 });
@@ -276,21 +319,24 @@ export const archivalGateRule = defineRule({
  * ```
  */
 export const positiveQuotaConstraint = defineConstraint({
-  id: 'chronos.retention.positiveQuota',
-  description: 'maxNodes must be a positive integer when specified',
+  id: "chronos.retention.positiveQuota",
+  description: "maxNodes must be a positive integer when specified",
   contract: {
-    ruleId: 'chronos.retention.positiveQuota',
-    behavior: 'Guards against zero or negative quota configuration',
+    ruleId: "chronos.retention.positiveQuota",
+    behavior: "Guards against zero or negative quota configuration",
     examples: [
-      { given: 'maxNodes=5000', when: 'constraint checked', then: 'passes' },
-      { given: 'maxNodes=0', when: 'constraint checked', then: 'violation' },
+      { given: "maxNodes=5000", when: "constraint checked", then: "passes" },
+      { given: "maxNodes=0", when: "constraint checked", then: "violation" },
     ],
-    invariants: ['maxNodes must always be > 0'],
+    invariants: ["maxNodes must always be > 0"],
   },
   impl: (state) => {
     const { maxNodes } = state.context;
     if (maxNodes === undefined || maxNodes === null) return true;
-    if (typeof maxNodes !== 'number' || maxNodes <= 0 || !Number.isInteger(maxNodes)) {
+    if (
+      typeof maxNodes !== "number" || maxNodes <= 0 ||
+      !Number.isInteger(maxNodes)
+    ) {
       return `maxNodes must be a positive integer, got ${maxNodes}`;
     }
     return true;
@@ -315,5 +361,5 @@ export const positiveQuotaConstraint = defineConstraint({
 export const retentionPolicyModule = defineModule({
   rules: [agePruningRule, quotaEnforcementRule, archivalGateRule],
   constraints: [positiveQuotaConstraint],
-  meta: { domain: 'retention-policy', version: '1.0.0' },
+  meta: { domain: "retention-policy", version: "1.0.0" },
 });

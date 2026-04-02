@@ -13,10 +13,10 @@
  * - `{ op: 'patch', changes: { key: diff }}` — object/array field-level diff
  */
 export type DiffDescriptor =
-  | { op: 'create'; value: unknown }
-  | { op: 'delete'; from: unknown }
-  | { op: 'replace'; from: unknown; value: unknown }
-  | { op: 'patch'; changes: Record<string | number, DiffDescriptor> };
+  | { op: "create"; value: unknown }
+  | { op: "delete"; from: unknown }
+  | { op: "replace"; from: unknown; value: unknown }
+  | { op: "patch"; changes: Record<string | number, DiffDescriptor> };
 
 /**
  * Compute a minimal diff between two JSON-serializable values.
@@ -25,4 +25,7 @@ export type DiffDescriptor =
  * @param after  - New value
  * @returns Diff descriptor, or `null` if identical
  */
-export declare function computeDiff(before: unknown, after: unknown): DiffDescriptor | null;
+export declare function computeDiff(
+  before: unknown,
+  after: unknown,
+): DiffDescriptor | null;

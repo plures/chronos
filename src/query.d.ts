@@ -6,7 +6,7 @@
  * @module @plures/chronos/query
  */
 
-import type { ChronicleNode, ChronicleEdge } from './chronicle.js';
+import type { ChronicleEdge, ChronicleNode } from "./chronicle.js";
 
 /**
  * Return all nodes whose timestamp falls within [startMs, endMs] (inclusive),
@@ -30,7 +30,10 @@ export declare function queryByTimeRange(
  * @param path  - Exact PluresDB path to match (e.g. `'todos.abc'`)
  * @returns ChronicleNodes sorted by timestamp ascending
  */
-export declare function queryByPath(nodes: ChronicleNode[], path: string): ChronicleNode[];
+export declare function queryByPath(
+  nodes: ChronicleNode[],
+  path: string,
+): ChronicleNode[];
 
 /**
  * Return all nodes whose path starts with the given prefix,

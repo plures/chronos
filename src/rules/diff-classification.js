@@ -9,7 +9,12 @@
  * @module @plures/chronos/rules/diff-classification
  */
 
-import { defineRule, defineConstraint, defineModule, RuleResult } from '@plures/praxis';
+import {
+  defineConstraint,
+  defineModule,
+  defineRule,
+  RuleResult,
+} from "@plures/praxis";
 
 // ── Events ─────────────────────────────────────────────────────────────────
 
@@ -26,7 +31,7 @@ import { defineRule, defineConstraint, defineModule, RuleResult } from '@plures/
  * }]);
  * ```
  */
-export const DIFF_RECORDED = 'chronos.diff.recorded';
+export const DIFF_RECORDED = "chronos.diff.recorded";
 
 // ── Rules ──────────────────────────────────────────────────────────────────
 
@@ -46,36 +51,56 @@ export const DIFF_RECORDED = 'chronos.diff.recorded';
  * ```
  */
 export const classifyChangeTypeRule = defineRule({
-  id: 'chronos.diff.classifyChangeType',
-  description: 'Classify a diff as create, update, or delete based on before/after values',
+  id: "chronos.diff.classifyChangeType",
+  description:
+    "Classify a diff as create, update, or delete based on before/after values",
   eventTypes: DIFF_RECORDED,
   contract: {
-    ruleId: 'chronos.diff.classifyChangeType',
-    behavior: 'Assigns a change type to every recorded diff',
+    ruleId: "chronos.diff.classifyChangeType",
+    behavior: "Assigns a change type to every recorded diff",
     examples: [
-      { given: 'before is null', when: 'diff recorded', then: 'diff.classified emitted with type=create' },
-      { given: 'after is null', when: 'diff recorded', then: 'diff.classified emitted with type=delete' },
-      { given: 'before and after are both non-null', when: 'diff recorded', then: 'diff.classified emitted with type=update' },
+      {
+        given: "before is null",
+        when: "diff recorded",
+        then: "diff.classified emitted with type=create",
+      },
+      {
+        given: "after is null",
+        when: "diff recorded",
+        then: "diff.classified emitted with type=delete",
+      },
+      {
+        given: "before and after are both non-null",
+        when: "diff recorded",
+        then: "diff.classified emitted with type=update",
+      },
     ],
-    invariants: ['Every recorded diff must be classified as exactly one change type'],
+    invariants: [
+      "Every recorded diff must be classified as exactly one change type",
+    ],
   },
   impl: (_state, events) => {
     const diffEvents = events.filter((e) => e.tag === DIFF_RECORDED);
-    if (diffEvents.length === 0) return RuleResult.skip('No diff.recorded event in batch');
+    if (diffEvents.length === 0) {
+      return RuleResult.skip("No diff.recorded event in batch");
+    }
 
     const classifiedFacts = diffEvents.map((event) => {
       const { nodeId, path, before, after } = event.payload;
       let changeType;
 
       if (before === null || before === undefined) {
-        changeType = 'create';
+        changeType = "create";
       } else if (after === null || after === undefined) {
-        changeType = 'delete';
+        changeType = "delete";
       } else {
-        changeType = 'update';
+        changeType = "update";
       }
 
-      return { tag: 'chronos.diff.classified', payload: { nodeId, path, changeType } };
+      return {
+        tag: "chronos.diff.classified",
+        payload: { nodeId, path, changeType },
+      };
     });
 
     return RuleResult.emit(classifiedFacts);
@@ -103,39 +128,57 @@ export const classifyChangeTypeRule = defineRule({
  * ```
  */
 export const assignSeverityRule = defineRule({
-  id: 'chronos.diff.assignSeverity',
-  description: 'Assign severity level to a classified diff',
+  id: "chronos.diff.assignSeverity",
+  description: "Assign severity level to a classified diff",
   eventTypes: DIFF_RECORDED,
   contract: {
-    ruleId: 'chronos.diff.assignSeverity',
-    behavior: 'Emits a severity fact for every recorded diff',
+    ruleId: "chronos.diff.assignSeverity",
+    behavior: "Emits a severity fact for every recorded diff",
     examples: [
-      { given: 'diff type is delete', when: 'diff recorded', then: 'severity=warning emitted' },
-      { given: 'path starts with auth.', when: 'diff recorded', then: 'severity=critical emitted' },
-      { given: 'diff is a plain update', when: 'diff recorded', then: 'severity=info emitted' },
+      {
+        given: "diff type is delete",
+        when: "diff recorded",
+        then: "severity=warning emitted",
+      },
+      {
+        given: "path starts with auth.",
+        when: "diff recorded",
+        then: "severity=critical emitted",
+      },
+      {
+        given: "diff is a plain update",
+        when: "diff recorded",
+        then: "severity=info emitted",
+      },
     ],
-    invariants: ['Every diff must receive exactly one severity assignment'],
+    invariants: ["Every diff must receive exactly one severity assignment"],
   },
   impl: (_state, events) => {
     const diffEvents = events.filter((e) => e.tag === DIFF_RECORDED);
-    if (diffEvents.length === 0) return RuleResult.skip('No diff.recorded event in batch');
+    if (diffEvents.length === 0) {
+      return RuleResult.skip("No diff.recorded event in batch");
+    }
 
     const severityFacts = diffEvents.map((event) => {
       const { nodeId, path, after } = event.payload;
       const isDelete = after === null || after === undefined;
-      const isCriticalPath = /^(auth|security|permission|role)\b/.test(String(path ?? '')) ||
-        String(path ?? '').endsWith('.critical');
+      const isCriticalPath =
+        /^(auth|security|permission|role)\b/.test(String(path ?? "")) ||
+        String(path ?? "").endsWith(".critical");
 
       let severity;
       if (isCriticalPath) {
-        severity = 'critical';
+        severity = "critical";
       } else if (isDelete) {
-        severity = 'warning';
+        severity = "warning";
       } else {
-        severity = 'info';
+        severity = "info";
       }
 
-      return { tag: 'chronos.diff.severity', payload: { nodeId, path, severity } };
+      return {
+        tag: "chronos.diff.severity",
+        payload: { nodeId, path, severity },
+      };
     });
 
     return RuleResult.emit(severityFacts);
@@ -164,31 +207,39 @@ export const assignSeverityRule = defineRule({
  * ```
  */
 export const scoreImpactRule = defineRule({
-  id: 'chronos.diff.scoreImpact',
-  description: 'Compute a 0–100 impact score for a recorded diff',
+  id: "chronos.diff.scoreImpact",
+  description: "Compute a 0–100 impact score for a recorded diff",
   eventTypes: DIFF_RECORDED,
   contract: {
-    ruleId: 'chronos.diff.scoreImpact',
-    behavior: 'Emits an impact score fact for every diff',
+    ruleId: "chronos.diff.scoreImpact",
+    behavior: "Emits an impact score fact for every diff",
     examples: [
-      { given: 'critical auth path deletion', when: 'diff recorded', then: 'impact score ≥ 80' },
-      { given: 'small info-level update', when: 'diff recorded', then: 'impact score ≤ 30' },
+      {
+        given: "critical auth path deletion",
+        when: "diff recorded",
+        then: "impact score ≥ 80",
+      },
+      {
+        given: "small info-level update",
+        when: "diff recorded",
+        then: "impact score ≤ 30",
+      },
     ],
-    invariants: ['Impact score must be in the range [0, 100]'],
+    invariants: ["Impact score must be in the range [0, 100]"],
   },
   impl: (_state, events) => {
     const diffEvents = events.filter((e) => e.tag === DIFF_RECORDED);
     if (diffEvents.length === 0) {
-      return RuleResult.skip('No diff.recorded event in batch');
+      return RuleResult.skip("No diff.recorded event in batch");
     }
 
     const impactFacts = diffEvents.map((event) => {
       const { nodeId, path, before, after } = event.payload;
       const isDelete = after === null || after === undefined;
-      const pathString = String(path ?? '');
+      const pathString = String(path ?? "");
       const isCriticalPath =
         /^(auth|security|permission|role)\b/.test(pathString) ||
-        pathString.endsWith('.critical');
+        pathString.endsWith(".critical");
 
       let base;
       if (isCriticalPath) {
@@ -207,7 +258,10 @@ export const scoreImpactRule = defineRule({
 
       const score = Math.min(100, base + sizeBonus);
 
-      return { tag: 'chronos.diff.impactScore', payload: { nodeId, path, score } };
+      return {
+        tag: "chronos.diff.impactScore",
+        payload: { nodeId, path, score },
+      };
     });
 
     return RuleResult.emit(impactFacts);
@@ -228,23 +282,33 @@ export const scoreImpactRule = defineRule({
  * ```
  */
 export const validChangeTypeConstraint = defineConstraint({
-  id: 'chronos.diff.validChangeType',
-  description: 'Classified change type must be create, update, or delete',
+  id: "chronos.diff.validChangeType",
+  description: "Classified change type must be create, update, or delete",
   contract: {
-    ruleId: 'chronos.diff.validChangeType',
-    behavior: 'Prevents invalid change types from entering the chronicle',
+    ruleId: "chronos.diff.validChangeType",
+    behavior: "Prevents invalid change types from entering the chronicle",
     examples: [
-      { given: 'changeType is update', when: 'constraint checked', then: 'passes' },
-      { given: 'changeType is "mutation"', when: 'constraint checked', then: 'violation' },
+      {
+        given: "changeType is update",
+        when: "constraint checked",
+        then: "passes",
+      },
+      {
+        given: 'changeType is "mutation"',
+        when: "constraint checked",
+        then: "violation",
+      },
     ],
-    invariants: ['changeType must be one of: create, update, delete'],
+    invariants: ["changeType must be one of: create, update, delete"],
   },
   impl: (state) => {
     const { lastClassified } = state.context;
     if (!lastClassified) return true;
-    const valid = ['create', 'update', 'delete'];
+    const valid = ["create", "update", "delete"];
     if (!valid.includes(lastClassified.changeType)) {
-      return `Invalid changeType "${lastClassified.changeType}" — must be one of: ${valid.join(', ')}`;
+      return `Invalid changeType "${lastClassified.changeType}" — must be one of: ${
+        valid.join(", ")
+      }`;
     }
     return true;
   },
@@ -268,5 +332,5 @@ export const validChangeTypeConstraint = defineConstraint({
 export const diffClassificationModule = defineModule({
   rules: [classifyChangeTypeRule, assignSeverityRule, scoreImpactRule],
   constraints: [validChangeTypeConstraint],
-  meta: { domain: 'diff-classification', version: '1.0.0' },
+  meta: { domain: "diff-classification", version: "1.0.0" },
 });

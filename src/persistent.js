@@ -33,8 +33,8 @@
  * ```
  */
 export function createPersistentWriter(db, options = {}) {
-  const { prefix = 'chronos:' } = options;
-  const actor = 'chronos';
+  const { prefix = "chronos:" } = options;
+  const actor = "chronos";
 
   /**
    * Write a batch of chronicle nodes and their edges to PluresDB.
@@ -50,7 +50,7 @@ export function createPersistentWriter(db, options = {}) {
       const key = `${prefix}${node.id}`;
       db.put(key, actor, {
         ...node,
-        _type: 'chronicle_node',
+        _type: "chronicle_node",
       });
     }
 
@@ -58,7 +58,7 @@ export function createPersistentWriter(db, options = {}) {
       const key = `${prefix}edge:${edge.from}:${edge.to}:${edge.type}`;
       db.put(key, actor, {
         ...edge,
-        _type: 'chronicle_edge',
+        _type: "chronicle_edge",
       });
     }
   }
@@ -75,9 +75,9 @@ export function createPersistentWriter(db, options = {}) {
     return records
       .filter(
         (r) =>
-          r.data?._type === 'chronicle_node' &&
+          r.data?._type === "chronicle_node" &&
           r.data.timestamp >= startMs &&
-          r.data.timestamp <= endMs
+          r.data.timestamp <= endMs,
       )
       .map((r) => r.data)
       .sort((a, b) => a.timestamp - b.timestamp);
@@ -94,7 +94,7 @@ export function createPersistentWriter(db, options = {}) {
     const records = db.list();
     return records
       .filter((r) => {
-        if (r.data?._type !== 'chronicle_edge') return false;
+        if (r.data?._type !== "chronicle_edge") return false;
         const matchesNode = r.data.from === nodeId || r.data.to === nodeId;
         const matchesType = edgeType ? r.data.type === edgeType : true;
         return matchesNode && matchesType;
@@ -110,7 +110,7 @@ export function createPersistentWriter(db, options = {}) {
    * @param {number} [maxDepth=10]
    * @returns {object[]} Ordered list of ChronicleNodes from starting node to root cause (or effects)
    */
-  function trace(nodeId, { direction = 'backward', maxDepth = 10 } = {}) {
+  function trace(nodeId, { direction = "backward", maxDepth = 10 } = {}) {
     const result = [];
     const visited = new Set();
     const queue = [{ id: nodeId, depth: 0 }];
@@ -121,14 +121,20 @@ export function createPersistentWriter(db, options = {}) {
     const edgeIndex = { forward: new Map(), backward: new Map() };
 
     for (const r of allRecords) {
-      if (r.data?._type === 'chronicle_node') {
+      if (r.data?._type === "chronicle_node") {
         nodeMap.set(r.data.id, r.data);
-      } else if (r.data?._type === 'chronicle_edge' && r.data.type === 'causes') {
+      } else if (
+        r.data?._type === "chronicle_edge" && r.data.type === "causes"
+      ) {
         // forward: from → [to]
-        if (!edgeIndex.forward.has(r.data.from)) edgeIndex.forward.set(r.data.from, []);
+        if (!edgeIndex.forward.has(r.data.from)) {
+          edgeIndex.forward.set(r.data.from, []);
+        }
         edgeIndex.forward.get(r.data.from).push(r.data.to);
         // backward: to → [from]
-        if (!edgeIndex.backward.has(r.data.to)) edgeIndex.backward.set(r.data.to, []);
+        if (!edgeIndex.backward.has(r.data.to)) {
+          edgeIndex.backward.set(r.data.to, []);
+        }
         edgeIndex.backward.get(r.data.to).push(r.data.from);
       }
     }
@@ -141,10 +147,9 @@ export function createPersistentWriter(db, options = {}) {
       const node = nodeMap.get(id);
       if (node) result.push(node);
 
-      const neighbors =
-        direction === 'backward'
-          ? edgeIndex.backward.get(id) || []
-          : edgeIndex.forward.get(id) || [];
+      const neighbors = direction === "backward"
+        ? edgeIndex.backward.get(id) || []
+        : edgeIndex.forward.get(id) || [];
 
       for (const nextId of neighbors) {
         queue.push({ id: nextId, depth: depth + 1 });
@@ -163,7 +168,7 @@ export function createPersistentWriter(db, options = {}) {
   function history(path) {
     const records = db.list();
     return records
-      .filter((r) => r.data?._type === 'chronicle_node' && r.data.path === path)
+      .filter((r) => r.data?._type === "chronicle_node" && r.data.path === path)
       .map((r) => r.data)
       .sort((a, b) => a.timestamp - b.timestamp);
   }
@@ -178,8 +183,8 @@ export function createPersistentWriter(db, options = {}) {
     let nodes = 0;
     let edges = 0;
     for (const r of records) {
-      if (r.data?._type === 'chronicle_node') nodes++;
-      else if (r.data?._type === 'chronicle_edge') edges++;
+      if (r.data?._type === "chronicle_node") nodes++;
+      else if (r.data?._type === "chronicle_edge") edges++;
     }
     return { nodes, edges };
   }

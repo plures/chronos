@@ -4,7 +4,11 @@
  * @module @plures/chronos/rules/alerting
  */
 
-import type { RuleDescriptor, ConstraintDescriptor, PraxisModule } from '@plures/praxis';
+import type {
+  ConstraintDescriptor,
+  PraxisModule,
+  RuleDescriptor,
+} from "@plures/praxis";
 
 /** Default maximum number of diffs allowed within a burst window. */
 export declare const DEFAULT_BURST_THRESHOLD: number;
@@ -19,7 +23,8 @@ export declare const DEFAULT_CRITICAL_RATIO_THRESHOLD: number;
 export declare const DEFAULT_ANOMALY_Z_THRESHOLD: number;
 
 /** Event tag emitted when an alerting evaluation is requested. */
-export declare const ALERT_EVALUATION_REQUESTED: 'chronos.alert.evaluationRequested';
+export declare const ALERT_EVALUATION_REQUESTED:
+  "chronos.alert.evaluationRequested";
 
 /** Fires an alert when the diff rate exceeds the configured threshold. */
 export declare const burstDetectionRule: RuleDescriptor<unknown>;
@@ -31,7 +36,9 @@ export declare const criticalSpikeRule: RuleDescriptor<unknown>;
 export declare const impactAnomalyRule: RuleDescriptor<unknown>;
 
 /** Ensures the burst threshold is a positive number. */
-export declare const positiveBurstThresholdConstraint: ConstraintDescriptor<unknown>;
+export declare const positiveBurstThresholdConstraint: ConstraintDescriptor<
+  unknown
+>;
 
 /** Praxis module bundling all alerting rules and constraints. */
 export declare const alertingModule: PraxisModule<unknown>;

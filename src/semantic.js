@@ -43,10 +43,12 @@
  * ```
  */
 export function createSemanticIndex(db, options = {}) {
-  const { embed, prefix: _prefix = 'chronos:', dimensions = 384 } = options;
+  const { embed, prefix: _prefix = "chronos:", dimensions = 384 } = options;
 
-  if (typeof embed !== 'function') {
-    throw new Error('SemanticIndex requires an embed function: async (text) => number[]');
+  if (typeof embed !== "function") {
+    throw new Error(
+      "SemanticIndex requires an embed function: async (text) => number[]",
+    );
   }
 
   // In-memory vector store (brute-force kNN for MVP)
@@ -67,11 +69,13 @@ export function createSemanticIndex(db, options = {}) {
     } else if (before !== null && after === null) {
       parts.push(`deleted: ${JSON.stringify(before)}`);
     } else {
-      parts.push(`changed from ${JSON.stringify(before)} to ${JSON.stringify(after)}`);
+      parts.push(
+        `changed from ${JSON.stringify(before)} to ${JSON.stringify(after)}`,
+      );
     }
 
     if (node.context) parts.push(`context:${node.context}`);
-    return parts.join(' | ');
+    return parts.join(" | ");
   }
 
   /**
@@ -122,7 +126,7 @@ export function createSemanticIndex(db, options = {}) {
   async function indexAll() {
     const records = db.list();
     const chronosNodes = records
-      .filter((r) => r.data?._type === 'chronicle_node')
+      .filter((r) => r.data?._type === "chronicle_node")
       .map((r) => r.data);
 
     await indexBatch(chronosNodes);
@@ -141,7 +145,10 @@ export function createSemanticIndex(db, options = {}) {
    * @param {string} [options.path] - Filter by path prefix
    * @returns {Array<{node, score, text}>}
    */
-  async function search(query, { topK = 5, minScore = 0.3, startMs, endMs, path } = {}) {
+  async function search(
+    query,
+    { topK = 5, minScore = 0.3, startMs, endMs, path } = {},
+  ) {
     const queryVec = await embed(query);
     const results = [];
 
@@ -169,7 +176,10 @@ export function createSemanticIndex(db, options = {}) {
    * @param {object} [options] - Same as search options + traceDepth
    * @returns {Array<{match, chain}>}
    */
-  async function searchAndTrace(query, { topK = 3, traceDepth = 5, ...searchOpts } = {}) {
+  async function searchAndTrace(
+    query,
+    { topK = 3, traceDepth = 5, ...searchOpts } = {},
+  ) {
     const matches = await search(query, { topK, ...searchOpts });
 
     // Build edge index from stored data
@@ -178,9 +188,11 @@ export function createSemanticIndex(db, options = {}) {
     const backwardEdges = new Map(); // to → [from]
 
     for (const r of records) {
-      if (r.data?._type === 'chronicle_node') {
+      if (r.data?._type === "chronicle_node") {
         nodeMap.set(r.data.id, r.data);
-      } else if (r.data?._type === 'chronicle_edge' && r.data.type === 'causes') {
+      } else if (
+        r.data?._type === "chronicle_edge" && r.data.type === "causes"
+      ) {
         if (!backwardEdges.has(r.data.to)) backwardEdges.set(r.data.to, []);
         backwardEdges.get(r.data.to).push(r.data.from);
       }

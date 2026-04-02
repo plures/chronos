@@ -4,10 +4,10 @@
  * @module @plures/chronos/chronicle
  */
 
-import type { DiffDescriptor } from './diff.js';
+import type { DiffDescriptor } from "./diff.js";
 
 export type { DiffDescriptor };
-export { currentCause, withCause } from './causal.js';
+export { currentCause, withCause } from "./causal.js";
 
 /**
  * A single recorded state-change event in the chronicle graph.
@@ -43,7 +43,7 @@ export interface ChronicleEdge {
   /** Target node ID */
   to: string;
   /** Edge type */
-  type: 'causes' | 'context' | 'reverts' | 'concurrent';
+  type: "causes" | "context" | "reverts" | "concurrent";
   /** Unix timestamp in milliseconds */
   timestamp: number;
 }
@@ -94,7 +94,7 @@ export interface ChronicleInstance {
    */
   trace(
     nodeId: string,
-    options?: { direction?: 'backward' | 'forward'; maxDepth?: number },
+    options?: { direction?: "backward" | "forward"; maxDepth?: number },
   ): ChronicleNode[];
   /** Return all nodes within a timestamp range (inclusive). */
   range(startMs: number, endMs: number): ChronicleNode[];

@@ -28,11 +28,11 @@
  * ```
  */
 
-import { PraxisRegistry, createPraxisEngine } from '@plures/praxis';
-import { diffClassificationModule } from './rules/diff-classification.js';
-import { retentionPolicyModule } from './rules/retention-policy.js';
-import { alertingModule } from './rules/alerting.js';
-import { integrityModule } from './rules/integrity.js';
+import { createPraxisEngine, PraxisRegistry } from "@plures/praxis";
+import { diffClassificationModule } from "./rules/diff-classification.js";
+import { retentionPolicyModule } from "./rules/retention-policy.js";
+import { alertingModule } from "./rules/alerting.js";
+import { integrityModule } from "./rules/integrity.js";
 
 /**
  * @typedef {object} ChronosContext
@@ -88,7 +88,7 @@ export function createChronosEngine(options = {}) {
     },
     registry,
     // Chronos is an append-only chronicle — preserve all emitted facts per step
-    factDedup: 'append',
+    factDedup: "append",
   });
 }
 
@@ -106,7 +106,7 @@ export function createChronosEngine(options = {}) {
  * registry.registerModule(diffClassificationModule);
  * ```
  */
-export { diffClassificationModule } from './rules/diff-classification.js';
+export { diffClassificationModule } from "./rules/diff-classification.js";
 
 /**
  * Praxis module bundling all retention-policy rules and constraints.
@@ -121,7 +121,7 @@ export { diffClassificationModule } from './rules/diff-classification.js';
  * registry.registerModule(retentionPolicyModule);
  * ```
  */
-export { retentionPolicyModule } from './rules/retention-policy.js';
+export { retentionPolicyModule } from "./rules/retention-policy.js";
 
 /**
  * Praxis module bundling all alerting rules and constraints.
@@ -136,7 +136,7 @@ export { retentionPolicyModule } from './rules/retention-policy.js';
  * registry.registerModule(alertingModule);
  * ```
  */
-export { alertingModule } from './rules/alerting.js';
+export { alertingModule } from "./rules/alerting.js";
 
 /**
  * Praxis module bundling all integrity rules and constraints.
@@ -151,5 +151,5 @@ export { alertingModule } from './rules/alerting.js';
  * registry.registerModule(integrityModule);
  * ```
  */
-export { integrityModule } from './rules/integrity.js';
-export * from './rules/index.js';
+export { integrityModule } from "./rules/integrity.js";
+export * from "./rules/index.js";

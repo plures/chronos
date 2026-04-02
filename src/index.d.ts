@@ -6,7 +6,7 @@
  * @module @plures/chronos
  */
 
-export { withCause, currentCause } from './causal.js';
+export { currentCause, withCause } from "./causal.js";
 
 /**
  * A ChronicleNode created by the legacy `createChronos` / `createNode` API.
@@ -36,7 +36,7 @@ export interface LegacyChronicleNode {
 export interface LegacyChronicleEdge {
   from: string;
   to: string;
-  type: 'causes' | 'context';
+  type: "causes" | "context";
   timestamp: number;
 }
 
@@ -79,7 +79,7 @@ export interface ChronosInstance {
   /** Traverse the causal graph from a node. */
   trace(
     nodeId: string,
-    options?: { direction?: 'backward' | 'forward'; maxDepth?: number },
+    options?: { direction?: "backward" | "forward"; maxDepth?: number },
   ): LegacyChronicleNode[];
   /** Return all nodes within a timestamp range (inclusive). */
   range(startMs: number, endMs: number): LegacyChronicleNode[];
@@ -102,4 +102,7 @@ export interface ChronosInstance {
  * @param options - Chronos options
  * @returns A new ChronosInstance
  */
-export declare function createChronos(db: object, options?: ChronosOptions): ChronosInstance;
+export declare function createChronos(
+  db: object,
+  options?: ChronosOptions,
+): ChronosInstance;

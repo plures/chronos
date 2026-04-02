@@ -112,8 +112,8 @@ export function queryByPathPrefix(nodes, prefix) {
 export function queryByContext(nodes, edges, contextId) {
   const memberIds = new Set(
     edges
-      .filter((e) => e.type === 'context' && e.from === contextId)
-      .map((e) => e.to)
+      .filter((e) => e.type === "context" && e.from === contextId)
+      .map((e) => e.to),
   );
 
   return nodes
@@ -169,8 +169,8 @@ export function query(nodes, edges = [], {
   if (contextId !== undefined) {
     contextIds = new Set(
       edges
-        .filter((e) => e.type === 'context' && e.from === contextId)
-        .map((e) => e.to)
+        .filter((e) => e.type === "context" && e.from === contextId)
+        .map((e) => e.to),
     );
   }
 
@@ -178,8 +178,13 @@ export function query(nodes, edges = [], {
     if (startMs !== undefined && n.timestamp < startMs) return false;
     if (endMs !== undefined && n.timestamp > endMs) return false;
     if (path !== undefined && n.path !== path) return false;
-    if (path === undefined && pathPrefix !== undefined && !n.path.startsWith(pathPrefix)) return false;
-    if (contextIds !== null && !contextIds.has(n.id) && n.context !== contextId) return false;
+    if (
+      path === undefined && pathPrefix !== undefined &&
+      !n.path.startsWith(pathPrefix)
+    ) return false;
+    if (
+      contextIds !== null && !contextIds.has(n.id) && n.context !== contextId
+    ) return false;
     return true;
   });
 

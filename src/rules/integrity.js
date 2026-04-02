@@ -9,7 +9,12 @@
  * @module @plures/chronos/rules/integrity
  */
 
-import { defineRule, defineConstraint, defineModule, RuleResult } from '@plures/praxis';
+import {
+  defineConstraint,
+  defineModule,
+  defineRule,
+  RuleResult,
+} from "@plures/praxis";
 
 // ── Events ─────────────────────────────────────────────────────────────────
 
@@ -26,7 +31,7 @@ import { defineRule, defineConstraint, defineModule, RuleResult } from '@plures/
  * }]);
  * ```
  */
-export const INTEGRITY_CHECK_REQUESTED = 'chronos.integrity.checkRequested';
+export const INTEGRITY_CHECK_REQUESTED = "chronos.integrity.checkRequested";
 
 /**
  * Event tag emitted when a replay validation is requested.
@@ -41,7 +46,8 @@ export const INTEGRITY_CHECK_REQUESTED = 'chronos.integrity.checkRequested';
  * }]);
  * ```
  */
-export const REPLAY_VALIDATION_REQUESTED = 'chronos.integrity.replayValidationRequested';
+export const REPLAY_VALIDATION_REQUESTED =
+  "chronos.integrity.replayValidationRequested";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -83,40 +89,52 @@ function simpleHash(value) {
  * ```
  */
 export const contiguityCheckRule = defineRule({
-  id: 'chronos.integrity.contiguityCheck',
-  description: 'Verify that every causal link in a chain is present with no gaps',
+  id: "chronos.integrity.contiguityCheck",
+  description:
+    "Verify that every causal link in a chain is present with no gaps",
   eventTypes: INTEGRITY_CHECK_REQUESTED,
   contract: {
-    ruleId: 'chronos.integrity.contiguityCheck',
-    behavior: 'Emits gap or contiguous fact after checking a chain of nodes',
+    ruleId: "chronos.integrity.contiguityCheck",
+    behavior: "Emits gap or contiguous fact after checking a chain of nodes",
     examples: [
-      { given: 'chain [A→B→C] with all edges present', when: 'check requested', then: 'integrity.contiguous emitted' },
-      { given: 'chain [A→B→C] with B→C edge missing', when: 'check requested', then: 'integrity.gap emitted for B→C' },
+      {
+        given: "chain [A→B→C] with all edges present",
+        when: "check requested",
+        then: "integrity.contiguous emitted",
+      },
+      {
+        given: "chain [A→B→C] with B→C edge missing",
+        when: "check requested",
+        then: "integrity.gap emitted for B→C",
+      },
     ],
     invariants: [
-      'A single-node chain is always contiguous',
-      'Every gap must identify the fromId and toId of the missing link',
+      "A single-node chain is always contiguous",
+      "Every gap must identify the fromId and toId of the missing link",
     ],
   },
   impl: (_state, events) => {
     const event = events.find((e) => e.tag === INTEGRITY_CHECK_REQUESTED);
-    if (!event) return RuleResult.skip('No integrity check event in batch');
+    if (!event) return RuleResult.skip("No integrity check event in batch");
 
     const { chain, edges } = event.payload;
 
     if (!Array.isArray(chain) || chain.length === 0) {
-      return RuleResult.noop('Empty chain — nothing to check');
+      return RuleResult.noop("Empty chain — nothing to check");
     }
     if (chain.length === 1) {
       return RuleResult.emit([
-        { tag: 'chronos.integrity.contiguous', payload: { chainLength: 1, gaps: [] } },
+        {
+          tag: "chronos.integrity.contiguous",
+          payload: { chainLength: 1, gaps: [] },
+        },
       ]);
     }
 
     const edgeSet = new Set(
       (edges ?? [])
-        .filter((e) => e.type === 'causes')
-        .map((e) => `${e.from}:${e.to}`)
+        .filter((e) => e.type === "causes")
+        .map((e) => `${e.from}:${e.to}`),
     );
 
     const gaps = [];
@@ -131,18 +149,22 @@ export const contiguityCheckRule = defineRule({
     if (gaps.length > 0) {
       return RuleResult.emit([
         {
-          tag: 'chronos.integrity.gap',
+          tag: "chronos.integrity.gap",
           payload: {
             gaps,
             chainLength: chain.length,
-            message: `Chronicle gap detected: ${gaps.length} missing causal link(s)`,
+            message:
+              `Chronicle gap detected: ${gaps.length} missing causal link(s)`,
           },
         },
       ]);
     }
 
     return RuleResult.emit([
-      { tag: 'chronos.integrity.contiguous', payload: { chainLength: chain.length, gaps: [] } },
+      {
+        tag: "chronos.integrity.contiguous",
+        payload: { chainLength: chain.length, gaps: [] },
+      },
     ]);
   },
 });
@@ -166,33 +188,46 @@ export const contiguityCheckRule = defineRule({
  * ```
  */
 export const gapDetectionRule = defineRule({
-  id: 'chronos.integrity.gapDetection',
-  description: 'Detect temporal gaps larger than the configured threshold in a node sequence',
+  id: "chronos.integrity.gapDetection",
+  description:
+    "Detect temporal gaps larger than the configured threshold in a node sequence",
   eventTypes: INTEGRITY_CHECK_REQUESTED,
   contract: {
-    ruleId: 'chronos.integrity.gapDetection',
-    behavior: 'Emits temporalGap facts for suspiciously large time jumps between consecutive nodes',
+    ruleId: "chronos.integrity.gapDetection",
+    behavior:
+      "Emits temporalGap facts for suspiciously large time jumps between consecutive nodes",
     examples: [
-      { given: 'nodes A(t=0) B(t=100) C(t=900) with threshold=200ms', when: 'check requested', then: 'temporalGap emitted for B→C' },
-      { given: 'nodes A(t=0) B(t=100) C(t=200) with threshold=200ms', when: 'check requested', then: 'no temporal gap' },
+      {
+        given: "nodes A(t=0) B(t=100) C(t=900) with threshold=200ms",
+        when: "check requested",
+        then: "temporalGap emitted for B→C",
+      },
+      {
+        given: "nodes A(t=0) B(t=100) C(t=200) with threshold=200ms",
+        when: "check requested",
+        then: "no temporal gap",
+      },
     ],
     invariants: [
-      'gapThresholdMs must be positive',
-      'Nodes must be sorted by timestamp before gap detection',
+      "gapThresholdMs must be positive",
+      "Nodes must be sorted by timestamp before gap detection",
     ],
   },
   impl: (_state, events) => {
     const event = events.find((e) => e.tag === INTEGRITY_CHECK_REQUESTED);
-    if (!event) return RuleResult.skip('No integrity check event in batch');
+    if (!event) return RuleResult.skip("No integrity check event in batch");
 
     const { chain, gapThresholdMs = 60_000 } = event.payload;
 
-    if (typeof gapThresholdMs !== 'number' || !Number.isFinite(gapThresholdMs) || gapThresholdMs <= 0) {
-      return RuleResult.skip('gapThresholdMs must be a positive number');
+    if (
+      typeof gapThresholdMs !== "number" || !Number.isFinite(gapThresholdMs) ||
+      gapThresholdMs <= 0
+    ) {
+      return RuleResult.skip("gapThresholdMs must be a positive number");
     }
 
     if (!Array.isArray(chain) || chain.length < 2) {
-      return RuleResult.noop('Not enough nodes for temporal gap detection');
+      return RuleResult.noop("Not enough nodes for temporal gap detection");
     }
 
     const sorted = [...chain].sort((a, b) => a.timestamp - b.timestamp);
@@ -212,16 +247,17 @@ export const gapDetectionRule = defineRule({
     if (temporalGaps.length > 0) {
       return RuleResult.emit([
         {
-          tag: 'chronos.integrity.temporalGap',
+          tag: "chronos.integrity.temporalGap",
           payload: {
             gaps: temporalGaps,
-            message: `Temporal gaps detected: ${temporalGaps.length} gap(s) exceeding ${gapThresholdMs}ms`,
+            message:
+              `Temporal gaps detected: ${temporalGaps.length} gap(s) exceeding ${gapThresholdMs}ms`,
           },
         },
       ]);
     }
 
-    return RuleResult.noop('No temporal gaps detected');
+    return RuleResult.noop("No temporal gaps detected");
   },
 });
 
@@ -245,29 +281,39 @@ export const gapDetectionRule = defineRule({
  * ```
  */
 export const replayValidationRule = defineRule({
-  id: 'chronos.integrity.replayValidation',
-  description: 'Verify that replaying a diff sequence reproduces the expected final state',
+  id: "chronos.integrity.replayValidation",
+  description:
+    "Verify that replaying a diff sequence reproduces the expected final state",
   eventTypes: REPLAY_VALIDATION_REQUESTED,
   contract: {
-    ruleId: 'chronos.integrity.replayValidation',
-    behavior: 'Validates state reconstruction consistency by comparing checksums',
+    ruleId: "chronos.integrity.replayValidation",
+    behavior:
+      "Validates state reconstruction consistency by comparing checksums",
     examples: [
-      { given: 'replay of [set x=1, set x=2] matches expected state {x:2}', when: 'replay requested', then: 'replayValid emitted' },
-      { given: 'replay produces {x:3} but expected {x:2}', when: 'replay requested', then: 'replayMismatch emitted' },
+      {
+        given: "replay of [set x=1, set x=2] matches expected state {x:2}",
+        when: "replay requested",
+        then: "replayValid emitted",
+      },
+      {
+        given: "replay produces {x:3} but expected {x:2}",
+        when: "replay requested",
+        then: "replayMismatch emitted",
+      },
     ],
     invariants: [
-      'Replay must apply diffs in ascending timestamp order',
-      'Every mismatch must include the expected and actual checksums',
+      "Replay must apply diffs in ascending timestamp order",
+      "Every mismatch must include the expected and actual checksums",
     ],
   },
   impl: (_state, events) => {
     const event = events.find((e) => e.tag === REPLAY_VALIDATION_REQUESTED);
-    if (!event) return RuleResult.skip('No replay validation event in batch');
+    if (!event) return RuleResult.skip("No replay validation event in batch");
 
     const { nodes, expectedChecksum, initialState = {} } = event.payload;
 
     if (!Array.isArray(nodes) || nodes.length === 0) {
-      return RuleResult.noop('No nodes to replay');
+      return RuleResult.noop("No nodes to replay");
     }
 
     // Sort by timestamp and apply diffs sequentially
@@ -290,7 +336,7 @@ export const replayValidationRule = defineRule({
     if (actualChecksum === expectedChecksum) {
       return RuleResult.emit([
         {
-          tag: 'chronos.integrity.replayValid',
+          tag: "chronos.integrity.replayValid",
           payload: { checksum: actualChecksum, nodeCount: nodes.length },
         },
       ]);
@@ -298,12 +344,13 @@ export const replayValidationRule = defineRule({
 
     return RuleResult.emit([
       {
-        tag: 'chronos.integrity.replayMismatch',
+        tag: "chronos.integrity.replayMismatch",
         payload: {
           expectedChecksum,
           actualChecksum,
           nodeCount: nodes.length,
-          message: `Replay mismatch: expected checksum ${expectedChecksum}, got ${actualChecksum}`,
+          message:
+            `Replay mismatch: expected checksum ${expectedChecksum}, got ${actualChecksum}`,
         },
       },
     ]);
@@ -324,16 +371,24 @@ export const replayValidationRule = defineRule({
  * ```
  */
 export const noDuplicateNodesConstraint = defineConstraint({
-  id: 'chronos.integrity.noDuplicateNodes',
-  description: 'A causal chain must not contain duplicate node IDs',
+  id: "chronos.integrity.noDuplicateNodes",
+  description: "A causal chain must not contain duplicate node IDs",
   contract: {
-    ruleId: 'chronos.integrity.noDuplicateNodes',
-    behavior: 'Prevents duplicate node IDs from corrupting a causal chain',
+    ruleId: "chronos.integrity.noDuplicateNodes",
+    behavior: "Prevents duplicate node IDs from corrupting a causal chain",
     examples: [
-      { given: 'chain [A, B, C] — all unique', when: 'constraint checked', then: 'passes' },
-      { given: 'chain [A, B, A] — A duplicated', when: 'constraint checked', then: 'violation' },
+      {
+        given: "chain [A, B, C] — all unique",
+        when: "constraint checked",
+        then: "passes",
+      },
+      {
+        given: "chain [A, B, A] — A duplicated",
+        when: "constraint checked",
+        then: "violation",
+      },
     ],
-    invariants: ['All node IDs in a chain must be unique'],
+    invariants: ["All node IDs in a chain must be unique"],
   },
   impl: (state) => {
     const { currentChain } = state.context;
@@ -343,7 +398,9 @@ export const noDuplicateNodesConstraint = defineConstraint({
     const unique = new Set(ids);
     if (unique.size !== ids.length) {
       const duplicates = ids.filter((id, idx) => ids.indexOf(id) !== idx);
-      return `Duplicate node IDs in chain: ${[...new Set(duplicates)].join(', ')}`;
+      return `Duplicate node IDs in chain: ${
+        [...new Set(duplicates)].join(", ")
+      }`;
     }
     return true;
   },
@@ -367,5 +424,5 @@ export const noDuplicateNodesConstraint = defineConstraint({
 export const integrityModule = defineModule({
   rules: [contiguityCheckRule, gapDetectionRule, replayValidationRule],
   constraints: [noDuplicateNodesConstraint],
-  meta: { domain: 'integrity', version: '1.0.0' },
+  meta: { domain: "integrity", version: "1.0.0" },
 });

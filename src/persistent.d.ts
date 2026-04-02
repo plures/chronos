@@ -4,7 +4,7 @@
  * @module @plures/chronos/persistent
  */
 
-import type { ChronicleNode, ChronicleEdge } from './chronicle.js';
+import type { ChronicleEdge, ChronicleNode } from "./chronicle.js";
 
 /** Options for `createPersistentWriter`. */
 export interface PersistentWriterOptions {
@@ -13,7 +13,7 @@ export interface PersistentWriterOptions {
 }
 
 /** The edge type filter accepted by `queryEdges`. */
-export type EdgeType = 'causes' | 'context' | 'reverts' | 'concurrent';
+export type EdgeType = "causes" | "context" | "reverts" | "concurrent";
 
 /** A PluresDB-backed chronicle writer. */
 export interface PersistentWriter {
@@ -52,7 +52,7 @@ export interface PersistentWriter {
    */
   trace(
     nodeId: string,
-    options?: { direction?: 'backward' | 'forward'; maxDepth?: number },
+    options?: { direction?: "backward" | "forward"; maxDepth?: number },
   ): ChronicleNode[];
 
   /**

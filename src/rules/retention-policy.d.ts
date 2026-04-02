@@ -4,7 +4,11 @@
  * @module @plures/chronos/rules/retention-policy
  */
 
-import type { RuleDescriptor, ConstraintDescriptor, PraxisModule } from '@plures/praxis';
+import type {
+  ConstraintDescriptor,
+  PraxisModule,
+  RuleDescriptor,
+} from "@plures/praxis";
 
 /** Default maximum age in milliseconds before a node is eligible for pruning (7 days). */
 export declare const DEFAULT_TTL_MS: number;
@@ -13,7 +17,8 @@ export declare const DEFAULT_TTL_MS: number;
 export declare const DEFAULT_MAX_NODES: number;
 
 /** Event tag emitted when a retention audit is requested. */
-export declare const RETENTION_AUDIT_REQUESTED: 'chronos.retention.auditRequested';
+export declare const RETENTION_AUDIT_REQUESTED:
+  "chronos.retention.auditRequested";
 
 /** Marks nodes older than the configured TTL as eligible for pruning. */
 export declare const agePruningRule: RuleDescriptor<unknown>;
