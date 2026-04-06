@@ -26,3 +26,18 @@ jobs:
         run: deno check src/**/*.ts || true
       - name: Test
         run: deno task test || true
+
+  docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Generate TypeDoc API docs
+        run: npm run docs:typedoc

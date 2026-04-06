@@ -1,0 +1,35 @@
+{
+  "entryPoints": [
+    "src/index.d.ts",
+    "src/chronicle.d.ts",
+    "src/diff.d.ts",
+    "src/causal.d.ts",
+    "src/query.d.ts",
+    "src/trace.d.ts",
+    "src/time-travel.d.ts",
+    "src/persistent.d.ts",
+    "src/semantic.d.ts",
+    "src/praxis.d.ts",
+    "src/rules/index.d.ts"
+  ],
+  "entryPointStrategy": "resolve",
+  "out": "docs/typedoc",
+  "name": "@plures/chronos",
+  "readme": "README.md",
+  "includeVersion": true,
+  "navigationLinks": {
+    "API Reference": "docs/api.md",
+    "GitHub": "https://github.com/plures/chronos"
+  },
+  "excludeExternals": false,
+  "excludePrivate": true,
+  "excludeProtected": false,
+  "categorizeByGroup": true,
+  "sort": ["source-order"],
+  "plugin": [],
+  "validation": {
+    "notExported": true,
+    "invalidLink": true,
+    "notDocumented": false
+  }
+}
