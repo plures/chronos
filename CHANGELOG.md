@@ -1,3 +1,11 @@
+## [0.2.1] — 2026-04-14
+
+- fix: resolve moderate security vulnerabilities in hono transitive deps (#93) (f69d58e)
+- chore(deps-dev): bump the dev-dependencies group with 3 updates (#91) (9200814)
+- ci: inline lifecycle workflow — fix schedule failures (2867784)
+- docs: add structured ROADMAP.md for automated issue generation (f01b4c2)
+- chore: remove redundant workflow — handled by release-reusable.yml (966abd3)
+
 ## [0.2.0] — 2026-04-07
 
 - chore: centralize release to org-wide reusable workflow (ab74aef)
