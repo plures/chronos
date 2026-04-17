@@ -1,3 +1,8 @@
+## [0.2.2] — 2026-04-17
+
+- fix(lifecycle): label-based retry counter + CI fix priority (411ffe6)
+- chore(deps-dev): bump the dev-dependencies group with 4 updates (#94) (89c1999)
+
 ## [0.2.1] — 2026-04-14
 
 - fix: resolve moderate security vulnerabilities in hono transitive deps (#93) (f69d58e)
