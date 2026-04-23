@@ -1,3 +1,9 @@
+## [0.5.0] — 2026-04-23
+
+- feat(lifecycle): milestone-close triggers roadmap-aware release (3ff9c0c)
+- docs: update copilot-instructions with Plures stack architecture (91c1316)
+- docs: update copilot-instructions with Plures stack architecture (20ab16b)
+
 ## [0.4.0] — 2026-04-18
 
 - feat(lifecycle v12): auto-release when milestone completes (24487a2)
