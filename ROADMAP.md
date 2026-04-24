@@ -1,31 +1,28 @@
-# Chronos Roadmap
+# chronos Roadmap
 
-## Current: v0.2.0
+## Role in OASIS
+Chronos provides graph‑native observability for OASIS applications. It chronicles PluresDB state diffs so Radix, plugins, and agents can debug, audit, and replay state changes without manual logging.
 
-## Phase 1: Core Stability (v0.3)
-- [ ] Diff compression — deduplicate repeated state snapshots
-- [ ] Configurable retention — TTL-based pruning of old state entries
-- [ ] Batch diff capture — group rapid state changes into single entries
-- [ ] Error boundaries — graceful degradation when PluresDB unavailable
-- [ ] Performance profiling — measure overhead of state tracking per operation
+## Current State
+- Chronicle capture, causal graph, diffing, and time‑travel APIs are implemented.
+- Unum integration exists; no open issues.
 
-## Phase 2: Query & Replay (v0.4)
-- [ ] Time-travel queries — reconstruct state at any historical timestamp
-- [ ] Diff search — find when a specific field changed and by whom
-- [ ] State replay — step through state changes forward/backward
-- [ ] Aggregate diffs — summarize changes over time periods
-- [ ] Export — dump state history as JSON/CSV for external analysis
+## Phase 1 — Reliability & Streaming
+- Streaming diff output to sinks (console/file/WebSocket).
+- Harden retention policies and archival targets.
+- Add chronicle subgraph query helpers for common OASIS workflows.
 
-## Phase 3: Integration (v0.5)
-- [ ] Svelte component — `<Chronicle>` wrapper that auto-tracks child state
-- [ ] Unum adapter — native integration with @plures/unum reactive stores
-- [ ] Praxis integration — constraint history (when did a rule fire? what changed?)
-- [ ] PluresDB procedures — chronicle procedure execution and side effects
-- [ ] WebSocket push — real-time state change notifications to connected clients
+## Phase 2 — Search & Query UX
+- Semantic search over state changes.
+- Query helpers for “when did X change” and “what caused Y.”
+- Export tooling (JSON/CSV) for audits and external analysis.
 
-## Phase 4: Visualization (v1.0)
-- [ ] Timeline component — visual state history in design-dojo
-- [ ] Diff viewer — side-by-side comparison of state snapshots
-- [ ] Causal graph — visualize which changes caused other changes
-- [ ] Dashboard widget — state health overview for pares-radix
+## Phase 3 — Distributed Observability
+- Chronicle sync across nodes (P2P where available; GitHub relay fallback if needed).
+- Context propagation helpers for browser and server runtimes.
+- Performance tuning for high‑frequency update streams (batching/sampling).
 
+## Phase 4 — UI Surfaces
+- Design‑dojo timeline + diff viewer components.
+- Radix dashboard widget for state health and causal hot‑spots.
+- Visual time‑travel debugger with replay controls.
