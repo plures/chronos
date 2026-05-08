@@ -1,6 +1,6 @@
 {
   "name": "@plures/chronos",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Graph-native application state chronicle — zero-effort observability through PluresDB state diffs",
   "type": "module",
   "main": "src/index.js",
@@ -49,6 +49,22 @@
     "./semantic": {
       "types": "./src/semantic.d.ts",
       "import": "./src/semantic.js"
+    },
+    "./levels": {
+      "types": "./src/levels.d.ts",
+      "import": "./src/levels.js"
+    },
+    "./contract": {
+      "types": "./src/contract.d.ts",
+      "import": "./src/contract.js"
+    },
+    "./buffer": {
+      "types": "./src/buffer.d.ts",
+      "import": "./src/buffer.js"
+    },
+    "./log-gate": {
+      "types": "./src/log-gate.d.ts",
+      "import": "./src/log-gate.js"
     }
   },
   "scripts": {
