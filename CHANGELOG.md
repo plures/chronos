@@ -1,3 +1,16 @@
+## [0.6.0] — 2026-05-08
+
+- feat: automatic logging via contracts, levels, rolling buffer, and log gate (ADR-0016) (190b170)
+- chore(deps-dev): bump svelte in the dev-dependencies group (#99) (b61639e)
+- fix: suppress ci-feedback issue spam (24h dedup window) (10a8f3f)
+- docs: refresh ROADMAP.md with OASIS strategic alignment (150c75e)
+- docs: update copilot-instructions with praxis, design-dojo, automation rules (df5cafb)
+- chore(deps-dev): bump the dev-dependencies group with 3 updates (#95) (ce7b041)
+- feat(release): add target_version input for milestone-driven releases (d3ca345)
+- feat(lifecycle): milestone-close triggers roadmap-aware release (3ff9c0c)
+- docs: update copilot-instructions with Plures stack architecture (91c1316)
+- docs: update copilot-instructions with Plures stack architecture (20ab16b)
+
 ## [0.4.0] — 2026-04-18
 
 - feat(lifecycle v12): auto-release when milestone completes (24487a2)
