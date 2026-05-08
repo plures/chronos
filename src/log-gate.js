@@ -96,13 +96,17 @@ export function createLogGate(registry, config = {}) {
    * @param {string} key     - PluresDB key
    * @param {*}      before  - Previous value
    * @param {*}      after   - New value
-   * @param {string} [context] - Session context
+   * @param {object} [options] - Additional context
+   * @param {string} [options.context] - Session context
+   * @param {import('./actor.js').Actor} [options.actor] - Who made this change
    */
-  function onWrite(key, before, after, context) {
+  function onWrite(key, before, after, options) {
+    const context = typeof options === "string" ? options : options?.context;
+    const actor = typeof options === "object" ? options?.actor : undefined;
     totalWrites++;
 
     // Always push to rolling buffer (regardless of level)
-    buffer.push({ key, before, after, context });
+    buffer.push({ key, before, after, context, cause: actor?.id ?? null });
 
     // Find matching contract
     const contract = registry.match(key);
@@ -119,6 +123,10 @@ export function createLogGate(registry, config = {}) {
 
     // Passed the gate — create node and write to sink
     const node = createChronicleNode(key, before, after, context);
+    // Attach actor to node for attribution
+    if (actor) {
+      node.actor = actor;
+    }
     if (sink) {
       sink.write([node]);
     }

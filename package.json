@@ -65,6 +65,14 @@
     "./log-gate": {
       "types": "./src/log-gate.d.ts",
       "import": "./src/log-gate.js"
+    },
+    "./actor": {
+      "types": "./src/actor.d.ts",
+      "import": "./src/actor.js"
+    },
+    "./compiler": {
+      "types": "./src/compiler.d.ts",
+      "import": "./src/compiler.js"
     }
   },
   "scripts": {
