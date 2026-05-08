@@ -1,3 +1,7 @@
+## [0.7.0] — 2026-05-08
+
+- feat: actor tracking with provisional state (keep/undo) + contract compiler (DSL → PluresDB procedures) (a1d52c8)
+
 ## [0.6.0] — 2026-05-08
 
 - feat: automatic logging via contracts, levels, rolling buffer, and log gate (ADR-0016) (190b170)
