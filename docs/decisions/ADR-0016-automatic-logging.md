@@ -182,6 +182,26 @@ This means:
 
 ## Consequences
 
+### Actor Model & Provisional State (Keep/Undo)
+
+Every write carries an `Actor` (HUMAN, AI, SYSTEM, EXTERNAL). This enables:
+
+- **AI writes are provisional** — stored in `ProvisionalTracker`, UI shows accept/reject
+- **Group operations** — an entire AI turn (multiple writes) can be accepted/rejected as a unit
+- **Attribution in logs** — the chronicle shows who made every change
+- **Contract differentiation** — contracts can specify different rules for AI vs human writes
+- **Shared editing** — AI can update `editor:file.ts` via PluresDB, Unum pushes the change to the UI, UI shows the diff with keep/undo affordance
+
+```
+AI writes "editor:file.ts" → PluresDB (last-state)
+                                ↓
+                          ProvisionalTracker marks as pending
+                                ↓
+                          Unum pushes to UI (shows diff + accept/reject)
+                                ↓
+                      User clicks Accept → commit() | Reject → revert()
+```
+
 ### What changes
 - `ChronosTimeline.record()` is no longer called by application code — procedures handle it
 - Contracts get `level`, `level_on_error`, `retention`, `sink` fields
