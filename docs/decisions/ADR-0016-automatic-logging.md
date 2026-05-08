@@ -228,7 +228,28 @@ AI writes "editor:file.ts" → PluresDB (last-state)
 2. **Rolling buffer namespace** — `_buffer:` with configurable window (default 5s) and ring semantics in PluresDB/Rust
 3. **Procedure: log-gate** — evaluates contract level vs active level, writes to sink
 4. **Procedure: error-escalation** — on error event, freeze + flush buffer
-5. **Contract compiler** — build step that reads contract DSL, emits PluresDB procedure definitions
+5. **Contract compiler** — build step that reads contract DSL, emits PluresDB procedure definitions ✅
 6. **Deprecate manual record()** — mark as `@deprecated`, add lint/warning
 7. **Chronos JS refactor** — strip write paths, keep read/query/UI
 8. **Retention pruner** — procedure that runs on schedule, prunes expired entries per contract TTL
+9. **eslint-plugin-plures** — compile-time enforcement that all state flows through PluresDB ✅
+
+## Deterministic Replay
+
+If every mutation passes through PluresDB and Chronos records it with full
+before/after + actor + causal chain + timestamp, then the entire application
+state is replayable from the timeline:
+
+```
+Timeline entry N: { key: "editor:file.ts", before: "v1", after: "v2", actor: ai:cerebellum, ts: T }
+```
+
+To replay: iterate entries in timestamp order, apply each `after` to its `key`.
+To rewind: iterate in reverse, apply each `before` to its `key`.
+
+This ONLY works if:
+- All state mutations go through PluresDB (enforced by `plures/no-raw-stores`, `plures/no-local-storage`)
+- All UI is deterministic from state (enforced by `plures/no-raw-html` — design-dojo components are pure functions of props)
+- No side-channel state exists (no localStorage, no in-memory-only stores)
+
+The ESLint plugin makes these invariants compile errors, not hopes.
