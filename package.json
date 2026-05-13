@@ -98,7 +98,7 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "license": "BSL-1.1",
+  "license": "(BSL-1.1 OR MIT)",
   "dependencies": {
     "@plures/praxis": "^2.4.33"
   },
