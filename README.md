@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/plures/chronos/actions/workflows/ci-feedback-loop.yml/badge.svg)](https://github.com/plures/chronos/actions/workflows/ci-feedback-loop.yml)
 [![npm version](https://img.shields.io/npm/v/@plures/chronos.svg)](https://www.npmjs.com/package/@plures/chronos)
-[![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue.svg)](./LICENSE)
+[![License: BSL-1.1](https://img.shields.io/badge/License-BSL--1.1-blue.svg)](LICENSE) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE-MIT)
 
 ## Table of Contents
 
@@ -291,4 +291,6 @@ See our [security policy](.github/SECURITY.md) for the responsible disclosure pr
 
 ## License
 
-AGPL-3.0-or-later
+
+Dual-licensed under [BSL-1.1](LICENSE) and [MIT](LICENSE-MIT). You may choose either license at your option.
+
