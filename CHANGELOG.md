@@ -1,3 +1,22 @@
+## [0.8.0] — 2026-07-23
+
+- fix(release): trigger on merge-to-main with should_release gate (#107) (d866bb5)
+- chore(deps-dev): bump svelte in the dev-dependencies group (#108) (dab5162)
+- ci: migrate Tech Doc Writer to shared reusable (c79cb90)
+- chore(deps-dev): bump the dev-dependencies group with 2 updates (#106) (998c0d0)
+- chore(deps-dev): bump the dev-dependencies group across 1 directory with 4 updates (#105) (9dabdfa)
+- fix(ci): repair tech-doc-writer YAML indentation / remove empty workflow (ad7f06b)
+- ci(dependabot): v3 - do not auto-merge pre-1.0 (0.x) breaking bumps (0.x minor is breaking; aes-gcm 0.10->0.11 broke main) (90ab008)
+- ci(dependabot): auto-merge security advisories regardless of semver bump (security over function) (7412211)
+- ci: add Dependabot auto-merge workflow (org pileup fix; green low-risk deps auto-merge) (930faa8)
+- ci: change release trigger from push-to-main to tag-only (1b41a32)
+- docs: update README license section for BSL-1.1 OR MIT dual-license (4ec5c32)
+- license: dual-license under BSL-1.1 OR MIT (0471172)
+- refactor: replace inline lifecycle with reusable workflow call (16cc035)
+- docs: add replay invariants and eslint enforcement to ADR-0016 (4192ab5)
+- docs: update ADR-0016 with actor model section (0954366)
+- feat: actor tracking with provisional state (keep/undo) + contract compiler (DSL → PluresDB procedures) (a1d52c8)
+
 ## [0.6.0] — 2026-05-08
 
 - feat: automatic logging via contracts, levels, rolling buffer, and log gate (ADR-0016) (190b170)
